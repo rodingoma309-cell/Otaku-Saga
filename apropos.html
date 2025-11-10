@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otaku Saga - À propos</title>
+    <link rel="stylesheet" href="accueil.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <h1>🎌 Otaku Saga</h1>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="accueil.html">Accueil</a></li>
+                <li><a href="actus.html">Actus</a></li>
+                <li><a href="service.html">Service</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="apropos.html" class="active">À propos</a></li>
+                <li><a href="#" id="logoutBtn" class="logout-btn">Déconnexion</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <section class="header-section">
+            <h1 class="page-title">ℹ️ À propos de Otaku Saga</h1>
+            <p class="page-subtitle">Votre destination ultime pour explorer l'univers des mangas</p>
+        </section>
+
+        <section class="about-section">
+            <div class="about-content">
+                <div class="about-text">
+                    <h2>Notre Mission</h2>
+                    <p>
+                        Otaku Saga est né de la passion pour les mangas et du désir de créer une plateforme 
+                        complète où les fans peuvent découvrir, explorer et partager leur amour pour cet art 
+                        japonais unique. Nous nous engageons à offrir une expérience exceptionnelle avec une 
+                        bibliothèque de plus de 5000 mangas, des actualités à jour et une communauté active.
+                    </p>
+
+                    <h2>Notre Histoire</h2>
+                    <p>
+                        Fondé en 2024, Otaku Saga a rapidement évolué pour devenir l'une des références 
+                        dans le monde des mangas en ligne. Notre équipe de passionnés travaille sans relâche 
+                        pour enrichir notre collection et améliorer votre expérience de lecture.
+                    </p>
+
+                    <h2>Ce qui nous rend uniques</h2>
+                    <ul class="features-list">
+                        <li>📚 Plus de 5000 mangas disponibles</li>
+                        <li>🆕 Mises à jour quotidiennes avec les derniers chapitres</li>
+                        <li>⭐ Système de recommandations intelligent</li>
+                        <li>💬 Communauté active et engagée</li>
+                        <li>📱 Application mobile disponible</li>
+                        <li>🎨 Interface moderne et intuitive</li>
+                    </ul>
+
+                    <h2>Notre Équipe</h2>
+                    <p>
+                        Notre équipe est composée de développeurs passionnés, de curateurs de contenu experts 
+                        et de membres de la communauté dévoués. Ensemble, nous travaillons pour faire de 
+                        Otaku Saga la meilleure plateforme de mangas au monde.
+                    </p>
+                </div>
+
+                <div class="stats-section">
+                    <h2>En Chiffres</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">5000+</div>
+                            <div class="stat-label">Mangas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">100K+</div>
+                            <div class="stat-label">Utilisateurs</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">50+</div>
+                            <div class="stat-label">Genres</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">24/7</div>
+                            <div class="stat-label">Disponibilité</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+    <style>
+        .about-section {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .about-content {
+            margin-top: 40px;
+        }
+        .about-text h2 {
+            color: #6c5ce7;
+            font-size: 2em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        .about-text p {
+            color: #d0d0d0;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 30px 0;
+        }
+        .features-list li {
+            color: #d0d0d0;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            font-size: 1.1em;
+        }
+        .stats-section {
+            margin-top: 60px;
+            padding: 40px;
+            background: rgba(108, 92, 231, 0.1);
+            border-radius: 20px;
+            border: 1px solid rgba(108, 92, 231, 0.3);
+        }
+        .stats-section h2 {
+            color: #6c5ce7;
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 30px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+        }
+        .stat-number {
+            font-size: 3em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6c5ce7 0%, #fd79a8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        .stat-label {
+            color: #b0b0b0;
+            font-size: 1.1em;
+        }
+    </style>
+</body>
+</html>
+

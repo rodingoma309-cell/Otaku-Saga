@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otaku Saga - Services</title>
+    <link rel="stylesheet" href="accueil.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <h1>🎌 Otaku Saga</h1>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="accueil.html">Accueil</a></li>
+                <li><a href="actus.html">Actus</a></li>
+                <li><a href="service.html" class="active">Service</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="apropos.html">À propos</a></li>
+                <li><a href="#" id="logoutBtn" class="logout-btn">Déconnexion</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <section class="header-section">
+            <h1 class="page-title">🛠️ Nos Services</h1>
+            <p class="page-subtitle">Découvrez tous les services que nous offrons pour votre passion des mangas</p>
+        </section>
+
+        <section class="services-section">
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">📚</div>
+                    <h3>Bibliothèque Complète</h3>
+                    <p>Accédez à plus de 5000 mangas de tous genres et de toutes époques. De One Piece à Kaiju No. 8, trouvez votre prochaine lecture.</p>
+                    <ul>
+                        <li>Plus de 5000 titres</li>
+                        <li>Tous les genres</li>
+                        <li>Mises à jour régulières</li>
+                    </ul>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">🔔</div>
+                    <h3>Notifications de Sortie</h3>
+                    <p>Ne manquez jamais un nouveau chapitre ! Recevez des notifications pour vos mangas favoris dès leur publication.</p>
+                    <ul>
+                        <li>Alertes personnalisées</li>
+                        <li>Notifications en temps réel</li>
+                        <li>Gestion de vos favoris</li>
+                    </ul>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">⭐</div>
+                    <h3>Recommandations Personnalisées</h3>
+                    <p>Notre algorithme analyse vos préférences pour vous suggérer les mangas qui correspondent à vos goûts.</p>
+                    <ul>
+                        <li>Suggestions intelligentes</li>
+                        <li>Basé sur vos lectures</li>
+                        <li>Découvrez de nouveaux genres</li>
+                    </ul>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">💬</div>
+                    <h3>Communauté Active</h3>
+                    <p>Rejoignez une communauté de passionnés, partagez vos avis, discutez de vos mangas préférés et découvrez de nouvelles séries.</p>
+                    <ul>
+                        <li>Forums de discussion</li>
+                        <li>Critiques et avis</li>
+                        <li>Événements communautaires</li>
+                    </ul>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">📱</div>
+                    <h3>Application Mobile</h3>
+                    <p>Lisez vos mangas partout, à tout moment. Notre application mobile est disponible sur iOS et Android.</p>
+                    <ul>
+                        <li>Lecture hors ligne</li>
+                        <li>Synchronisation cloud</li>
+                        <li>Interface optimisée</li>
+                    </ul>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">🎁</div>
+                    <h3>Abonnements Premium</h3>
+                    <p>Profitez d'avantages exclusifs avec nos abonnements premium : accès anticipé, contenu exclusif et bien plus.</p>
+                    <ul>
+                        <li>Accès anticipé</li>
+                        <li>Contenu exclusif</li>
+                        <li>Sans publicité</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+    <style>
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+            padding: 40px 20px;
+        }
+        .page-title {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #6c5ce7 0%, #fd79a8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .page-subtitle {
+            font-size: 1.2em;
+            color: #b0b0b0;
+        }
+        .services-section {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        .service-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(108, 92, 231, 0.3);
+            border-color: #6c5ce7;
+        }
+        .service-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        .service-card h3 {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            color: #ffffff;
+        }
+        .service-card p {
+            color: #d0d0d0;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+        .service-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        .service-card ul li {
+            color: #b0b0b0;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .service-card ul li:last-child {
+            border-bottom: none;
+        }
+        .service-card ul li::before {
+            content: "✓ ";
+            color: #6c5ce7;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</body>
+</html>

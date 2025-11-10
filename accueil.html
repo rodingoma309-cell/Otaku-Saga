@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otaku Saga - Accueil</title>
+    <link rel="stylesheet" href="accueil.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <h1>🎌 Otaku Saga</h1>
+            </div>
+            <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="accueil.html" class="active">Accueil</a></li>
+                <li><a href="actus.html">Actus</a></li>
+                <li><a href="service.html">Service</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="apropos.html">À propos</a></li>
+                <li><a href="#" id="logoutBtn" class="logout-btn">Déconnexion</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h2 class="hero-title">Bienvenue dans l'univers des mangas</h2>
+                <p class="hero-subtitle">Découvrez des milliers de mangas et plongez dans des aventures épiques</p>
+            </div>
+        </section>
+
+        <section class="carousel-section">
+            <h2 class="section-title">Mangas Populaires</h2>
+            <div class="carousel-container">
+                <div class="carousel-wrapper">
+                    <div class="carousel-track" id="carouselTrack">
+                        <!-- Les images seront ajoutées dynamiquement -->
+                    </div>
+                </div>
+                <button class="carousel-btn prev" id="prevBtn">‹</button>
+                <button class="carousel-btn next" id="nextBtn">›</button>
+                <div class="carousel-dots" id="carouselDots"></div>
+            </div>
+        </section>
+
+        <section class="features-section">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3>Bibliothèque Complète</h3>
+                    <p>Accédez à plus de 5000 mangas de tous genres</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🆕</div>
+                    <h3>Nouveautés</h3>
+                    <p>Restez à jour avec les derniers chapitres</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⭐</div>
+                    <h3>Recommandations</h3>
+                    <p>Découvrez des mangas adaptés à vos goûts</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <div class="footer-content">
+            <h3>📱 Application Mobile Bientôt Disponible</h3>
+            <p>L'application Otaku Saga sera bientôt disponible sur vos appareils mobiles</p>
+            <div class="store-buttons">
+                <a href="#" class="store-btn google-play" title="Bientôt sur Google Play">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" style="height: 50px;">
+                    <span class="coming-soon">Bientôt disponible</span>
+                </a>
+                <a href="#" class="store-btn app-store" title="Bientôt sur App Store">
+                    <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/fr-fr?size=250x83&releaseDate=1285891200" alt="App Store" style="height: 50px;">
+                    <span class="coming-soon">Bientôt disponible</span>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+    <script src="accueil.js"></script>
+    <script src="common-nav.js"></script>
+</body>
+</html>
+
