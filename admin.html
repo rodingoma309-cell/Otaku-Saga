@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Otaku Saga - Panel Admin</title>
+    <link rel="stylesheet" href="admin.css" />
+    <!--Firebase App(core SDK)-->
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js"></script>
+    <!--Firebase Auth-->
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js"></script>
+    <!--Firebase Firestore-->
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js"></script>
+  </head>
+  <body>
+    <!-- FORMULAIRE DE CONNEXION ADMIN -->
+    <div id="adminLoginBox" class="admin-login-container">
+      <div class="admin-login-box">
+        <h1>🛡️ Panel Administrateur</h1>
+        <p>Otaku Saga - Accès réservé</p>
+
+        <form id="adminLoginForm">
+          <div class="form-group">
+            <label for="adminEmail">Email Admin</label>
+            <input
+              type="email"
+              id="adminEmail"
+              required
+              placeholder="admin@email.com"
+            />
+          </div>
+          <div class="form-group">
+            <label for="adminPassword">Mot de passe</label>
+            <input
+              type="password"
+              id="adminPassword"
+              required
+              placeholder="••••••••"
+            />
+          </div>
+          <button type="submit" class="btn-login">Accéder au Panel</button>
+          <div id="adminErrorMessage" class="error-message"></div>
+        </form>
+
+        <div class="admin-info">
+          <p>Admins autorisés : donatien@admin.com & blackness@admin.com</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD ADMIN -->
+    <div id="adminDashboard" class="admin-dashboard" style="display: none">
+      <!-- HEADER -->
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>📊 Tableau de Bord</h1>
+          <p id="welcomeAdmin"></p>
+        </div>
+        <div class="header-right">
+          <button id="logoutBtn" class="btn-logout">Se déconnecter</button>
+        </div>
+      </header>
+
+      <!-- SIDEBAR -->
+      <aside class="admin-sidebar">
+        <nav class="admin-nav">
+          <button class="nav-btn active" data-section="dashboard">
+            📈 Tableau de bord
+          </button>
+          <button class="nav-btn" data-section="users">
+            👥 Gestion des utilisateurs
+          </button>
+          <button class="nav-btn" data-section="stats">📊 Statistiques</button>
+          <button class="nav-btn" data-section="monitoring">
+            🔍 Suivi du site
+          </button>
+        </nav>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="admin-content">
+        <!-- SECTION DASHBOARD -->
+        <section id="dashboard" class="section active">
+          <h2>Vue d'ensemble</h2>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon">👥</div>
+              <div class="stat-info">
+                <h3>Utilisateurs Total</h3>
+                <p id="totalUsers" class="stat-number">0</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">✅</div>
+              <div class="stat-info">
+                <h3>Utilisateurs Actifs</h3>
+                <p id="activeUsers" class="stat-number">0</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">📅</div>
+              <div class="stat-info">
+                <h3>Inscriptions Aujourd'hui</h3>
+                <p id="todaySignups" class="stat-number">0</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">⚠️</div>
+              <div class="stat-info">
+                <h3>Comptes Inactifs</h3>
+                <p id="inactiveUsers" class="stat-number">0</p>
+              </div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <h3>Activité récente</h3>
+            <div id="recentActivity" class="activity-list"></div>
+          </div>
+        </section>
+
+        <!-- SECTION GESTION UTILISATEURS -->
+        <section id="users" class="section">
+          <h2>Gestion des utilisateurs</h2>
+          <div class="users-controls">
+            <input
+              type="text"
+              id="searchUsers"
+              placeholder="Rechercher un utilisateur..."
+              class="search-input"
+            />
+            <select id="filterUsers" class="filter-select">
+              <option value="">Tous les utilisateurs</option>
+              <option value="active">Actifs</option>
+              <option value="inactive">Inactifs</option>
+            </select>
+          </div>
+          <div class="users-table-container">
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th>Pseudo</th>
+                  <th>Email</th>
+                  <th>Date d'inscription</th>
+                  <th>Statut</th>
+                  <th>Dernière activité</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <tr>
+                  <td colspan="6" class="text-center">Chargement...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- SECTION STATISTIQUES -->
+        <section id="stats" class="section">
+          <h2>Statistiques détaillées</h2>
+          <div class="stats-detailed">
+            <div class="stats-box">
+              <h3>Croissance des utilisateurs</h3>
+              <div id="growthChart" class="chart"></div>
+            </div>
+            <div class="stats-box">
+              <h3>Distribution par jour</h3>
+              <div id="distributionChart" class="chart"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION SUIVI -->
+        <section id="monitoring" class="section">
+          <h2>Suivi du site</h2>
+          <div class="monitoring-grid">
+            <div class="monitoring-card">
+              <h3>🟢 Statut du serveur</h3>
+              <p id="serverStatus" class="status-online">En ligne</p>
+            </div>
+            <div class="monitoring-card">
+              <h3>⏱️ Temps de réponse</h3>
+              <p id="responseTime">--ms</p>
+            </div>
+            <div class="monitoring-card">
+              <h3>🔒 Sécurité</h3>
+              <p id="securityStatus" class="status-secure">Sécurisé</p>
+            </div>
+          </div>
+          <div class="logs-container">
+            <h3>Journaux d'activité</h3>
+            <div id="activityLogs" class="logs-list"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="admin.js"></script>
+  </body>
+</html>
