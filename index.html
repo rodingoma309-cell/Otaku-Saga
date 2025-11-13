@@ -6,13 +6,14 @@
     <title>Otaku Saga - Connexion</title>
     <link rel="stylesheet" href="auth.css" />
     <!--Firebase App(core SDK)-->
-    <script src="https://www.gstatic.com/firebasejs/ 1 0 . 5 . 2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js"></script>
     <!--Firebase Auth-->
-    <script src="https://www.gstatic.com/firebasejs/ 1 0 . 5 . 2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js"></script>
   </head>
   <body>
     <div class="auth-container">
-      <div class="auth-box">
+      <!-- FORMULAIRE DE CONNEXION -->
+      <div class="auth-box" id="loginBox">
         <div class="logo-section">
           <h1 class="app-title">🎌 Otaku Saga</h1>
           <p class="app-subtitle">Votre portail vers l'univers des mangas</p>
@@ -74,17 +75,103 @@
           </div>
         </div>
       </div>
+
+      <!-- FORMULAIRE D'INSCRIPTION -->
+      <div class="auth-box" id="registerBox" style="display: none">
+        <div class="logo-section">
+          <h1 class="app-title">🎌 Otaku Saga</h1>
+          <p class="app-subtitle">Créez votre compte</p>
+        </div>
+
+        <form id="registerForm" class="auth-form">
+          <div class="form-group">
+            <label for="registerUsername">Nom d'utilisateur</label>
+            <input
+              type="text"
+              id="registerUsername"
+              name="username"
+              required
+              placeholder="Votre pseudo"
+              minlength="3"
+              maxlength="20"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="registerEmail">Email</label>
+            <input
+              type="email"
+              id="registerEmail"
+              name="email"
+              required
+              placeholder="votre@email.com"
+              autocomplete="email"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="registerPassword">Mot de passe</label>
+            <input
+              type="password"
+              id="registerPassword"
+              name="password"
+              required
+              placeholder="••••••••"
+              minlength="6"
+              autocomplete="new-password"
+            />
+            <small style="color: #7f8c8d; margin-top: 5px; display: block">
+              Minimum 6 caractères
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirmer le mot de passe</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              required
+              placeholder="••••••••"
+              autocomplete="new-password"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="registerBio">Bio (optionnel)</label>
+            <textarea
+              id="registerBio"
+              name="bio"
+              placeholder="Parlez-nous de vous..."
+              maxlength="150"
+              style="resize: vertical; min-height: 80px"
+            ></textarea>
+          </div>
+
+          <button type="submit" class="btn-auth">S'inscrire</button>
+
+          <div id="registerErrorMessage" class="error-message"></div>
+        </form>
+
+        <div class="auth-footer">
+          <p>
+            Vous avez déjà un compte ?
+            <a href="#" id="loginLink">Se connecter</a>
+          </p>
+        </div>
+      </div>
     </div>
+
     <script>
       const firebaseConfig = {
-        apikey: "AIzaSyDmLoRd1Plxm8TVtHQaIumVZuJIFUkND5k",
-        authDomain: "donatien-c 5 fd7 . firebaseapp.com",
-        projectId: "donatien- c 5 fd7",
-        StorageBucket: "donatien-c5fd7.appspot.com",
+        apiKey: "AIzaSyDmLoRd1Plxm8TVtHQaIumVZuJIFUkND5k",
+        authDomain: "donatien-c5fd7.firebaseapp.com",
+        projectId: "donatien-c5fd7",
+        storageBucket: "donatien-c5fd7.appspot.com",
         messagingSenderId: "96281887961",
         appId: "1:96281887961:web:0752bc0976cbb3012c6ac8",
       };
-      //Initialiser Firebase
+      // Initialiser Firebase
       firebase.initializeApp(firebaseConfig);
     </script>
     <script src="app.js"></script>
