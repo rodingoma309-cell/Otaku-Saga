@@ -1,122 +1,125 @@
-// Vérifier si l'utilisateur est connecté
-function checkAuth() {
-  const isAuthenticated = localStorage.getItem("isAuthenticated");
-  const currentPage =
-    window.location.pathname.split("/").pop() ||
-    window.location.href.split("/").pop();
+const loginBox = document.getElementById("loginBox");
+const registerBox = document.getElementById("registerBox");
+const registerLink = document.getElementById("registerLink");
+const loginLink = document.getElementById("loginLink");
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
+const errorMessage = document.getElementById("errorMessage");
+const registerErrorMessage = document.getElementById("registerErrorMessage");
 
-  const protectedPages = [
-    "accueil.html",
-    "actus.html",
-    "service.html",
-    "contact.html",
-    "apropos.html",
-    "lecture.html",
-  ];
+// Basculer vers l'inscription
+registerLink.addEventListener("click", (e) => {
+  e.preventDefault();
+  loginBox.style.display = "none";
+  registerBox.style.display = "block";
+  errorMessage.textContent = "";
+});
 
-  if (protectedPages.includes(currentPage) && !isAuthenticated) {
-    window.location.href = "auth.html";
-    return false;
+// Basculer vers la connexion
+loginLink.addEventListener("click", (e) => {
+  e.preventDefault();
+  registerBox.style.display = "none";
+  loginBox.style.display = "block";
+  registerErrorMessage.textContent = "";
+});
+
+// Gestion de l'inscription
+registerForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const username = document.getElementById("registerUsername").value.trim();
+  const email = document.getElementById("registerEmail").value.trim();
+  const password = document.getElementById("registerPassword").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+  const bio = document.getElementById("registerBio").value.trim();
+
+  registerErrorMessage.textContent = "";
+
+  // Validation
+  if (username.length < 3 || username.length > 20) {
+    registerErrorMessage.textContent =
+      "Le pseudo doit contenir entre 3 et 20 caractères.";
+    return;
   }
 
-  return true;
-}
-
-// Initialisation au chargement
-document.addEventListener("DOMContentLoaded", function () {
-  checkAuth();
-
-  const currentPage =
-    window.location.pathname.split("/").pop() ||
-    window.location.href.split("/").pop();
-
-  if (
-    currentPage === "auth.html" ||
-    currentPage === "" ||
-    currentPage.includes("auth.html")
-  ) {
-    const isAuthenticated = localStorage.getItem("isAuthenticated");
-    if (isAuthenticated) {
-      const alreadyConnectedDiv = document.getElementById("alreadyConnected");
-      if (alreadyConnectedDiv) {
-        alreadyConnectedDiv.style.display = "block";
-      }
-    }
+  if (password.length < 6) {
+    registerErrorMessage.textContent =
+      "Le mot de passe doit contenir au moins 6 caractères.";
+    return;
   }
 
-  // Gestion formulaire de connexion
-  const loginForm = document.getElementById("loginForm");
-  if (loginForm) {
-    loginForm.addEventListener("submit", handleLogin);
+  if (password !== confirmPassword) {
+    registerErrorMessage.textContent =
+      "Les mots de passe ne correspondent pas.";
+    return;
   }
 
-  // Gestion bouton déconnexion
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", handleLogout);
-  }
+  try {
+    // Créer l'utilisateur avec Firebase
+    const userCredential = await firebase
+      .auth()
+      .createUserWithEmailAndPassword(email, password);
 
-  // Lien inscription (simple alert)
-  const registerLink = document.getElementById("registerLink");
-  if (registerLink) {
-    registerLink.addEventListener("click", function (e) {
-      e.preventDefault();
-      alert(
-        "Pour cette démo, utilisez n'importe quel email et mot de passe pour vous connecter."
-      );
+    // Mettre à jour le profil avec le nom d'utilisateur
+    await userCredential.user.updateProfile({
+      displayName: username,
     });
+
+    // Vous pouvez stocker la bio dans Firestore si vous l'avez configuré
+    // Pour l'instant, nous stockons juste le profil de base
+
+    registerErrorMessage.style.color = "#27ae60";
+    registerErrorMessage.textContent =
+      "✓ Inscription réussie ! Redirection en cours...";
+
+    // Rediriger vers la page de connexion après 2 secondes
+    setTimeout(() => {
+      registerBox.style.display = "none";
+      loginBox.style.display = "block";
+      registerForm.reset();
+      registerErrorMessage.textContent = "";
+    }, 2000);
+  } catch (error) {
+    if (error.code === "auth/email-already-in-use") {
+      registerErrorMessage.textContent = "Cet email est déjà utilisé.";
+    } else if (error.code === "auth/invalid-email") {
+      registerErrorMessage.textContent = "Email invalide.";
+    } else if (error.code === "auth/weak-password") {
+      registerErrorMessage.textContent = "Le mot de passe est trop faible.";
+    } else {
+      registerErrorMessage.textContent = error.message;
+    }
   }
 });
 
-// Gérer la connexion
-function handleLogin(e) {
+// Gestion de la connexion
+loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
 
-  const email = emailInput.value.trim();
-  const password = passwordInput.value.trim();
+  errorMessage.textContent = "";
 
-  if (!email || !password) {
-    showError("Veuillez remplir tous les champs");
-    return;
+  try {
+    await firebase.auth().signInWithEmailAndPassword(email, password);
+    window.location.href = "accueil.html";
+  } catch (error) {
+    if (error.code === "auth/user-not-found") {
+      errorMessage.textContent =
+        "Aucun compte avec cet email. Veuillez vous inscrire.";
+    } else if (error.code === "auth/wrong-password") {
+      errorMessage.textContent = "Mot de passe incorrect.";
+    } else {
+      errorMessage.textContent = error.message;
+    }
   }
+});
 
-  if (!email.includes("@")) {
-    showError("Veuillez entrer une adresse email valide");
-    return;
+// Vérifier si l'utilisateur est déjà connecté
+firebase.auth().onAuthStateChanged((user) => {
+  if (user) {
+    document.getElementById("alreadyConnected").style.display = "block";
+    loginForm.style.display = "none";
   }
-
-  //je stocke egalement l'adresse email de l'utilisateur
-  localStorage.setItem("isAuthenticated", "true");
-  localStorage.setItem("email", email);
-
-  window.location.href = "accueil.html";
-}
-
-// Gérer la déconnexion
-function handleLogout(e) {
-  e.preventDefault();
-  if (confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("email");
-    window.location.href = "auth.html";
-  }
-}
-
-// Afficher un message d'erreur
-function showError(message) {
-  const errorMessage = document.getElementById("errorMessage");
-  if (errorMessage) {
-    errorMessage.textContent = message;
-    errorMessage.classList.add("show");
-    setTimeout(() => {
-      errorMessage.classList.remove("show");
-    }, 5000);
-  }
-}
-
-// Exporter les fonctions pour d’autres fichiers
-window.checkAuth = checkAuth;
-window.handleLogout = handleLogout;
+});
