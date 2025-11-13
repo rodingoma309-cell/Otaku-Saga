@@ -6,7 +6,6 @@
     <title>Otaku Saga - Connexion</title>
     <link rel="stylesheet" href="auth.css" />
     <style>
-      /* petit loader et style message d'erreur */
       .inline-loader {
         display: inline-block;
         width: 14px;
@@ -23,20 +22,19 @@
           transform: rotate(360deg);
         }
       }
-      /* forcer message d'erreur en rouge */
       .error-message {
         color: #e74c3c;
       }
     </style>
 
-    <!--Firebase App(core SDK)-->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js"></script>
-    <!--Firebase Auth-->
     <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js"></script>
   </head>
   <body>
     <div class="auth-container">
-      <!-- FORMULAIRE DE CONNEXION -->
+      <!-- CONNEXION -->
       <div class="auth-box" id="loginBox">
         <div class="logo-section">
           <h1 class="app-title">🎌 Otaku Saga</h1>
@@ -69,7 +67,6 @@
           </div>
 
           <button type="submit" class="btn-auth">Se connecter</button>
-
           <div id="errorMessage" class="error-message"></div>
         </form>
 
@@ -100,7 +97,7 @@
         </div>
       </div>
 
-      <!-- FORMULAIRE D'INSCRIPTION -->
+      <!-- INSCRIPTION (sans bio) -->
       <div class="auth-box" id="registerBox" style="display: none">
         <div class="logo-section">
           <h1 class="app-title">🎌 Otaku Saga</h1>
@@ -144,9 +141,9 @@
               minlength="6"
               autocomplete="new-password"
             />
-            <small style="color: #7f8c8d; margin-top: 5px; display: block">
-              Minimum 6 caractères
-            </small>
+            <small style="color: #7f8c8d; display: block; margin-top: 5px"
+              >Minimum 6 caractères</small
+            >
           </div>
 
           <div class="form-group">
@@ -161,19 +158,7 @@
             />
           </div>
 
-          <div class="form-group">
-            <label for="registerBio">Bio (optionnel)</label>
-            <textarea
-              id="registerBio"
-              name="bio"
-              placeholder="Parlez-nous de vous..."
-              maxlength="150"
-              style="resize: vertical; min-height: 80px"
-            ></textarea>
-          </div>
-
           <button type="submit" class="btn-auth">S'inscrire</button>
-
           <div id="registerErrorMessage" class="error-message"></div>
         </form>
 
@@ -195,15 +180,14 @@
         messagingSenderId: "96281887961",
         appId: "1:96281887961:web:0752bc0976cbb3012c6ac8",
       };
-      // Initialiser Firebase
       firebase.initializeApp(firebaseConfig);
     </script>
+
     <script src="offline.js"></script>
     <script src="app.js"></script>
 
     <script>
-      // Vérifie si email existe avant d'essayer de se connecter.
-      // Si pas d'email trouvé : affiche message rouge, redirige vers inscription et pré-remplit email.
+      // vérifier existence email avant tentative connexion -> rediriger vers inscription si absent
       (function () {
         const loginForm = document.getElementById("loginForm");
         const errorEl = document.getElementById("errorMessage");
@@ -211,10 +195,9 @@
         loginForm?.addEventListener("submit", async function (e) {
           const emailInput = document.getElementById("email");
           const email = (emailInput?.value || "").trim();
-          if (!email) return; // laisser app.js gérer la validation
+          if (!email) return;
 
           if (!navigator.onLine) {
-            // OfflineManager gère déjà normalement, mais on assure
             errorEl.textContent =
               "Connexion Internet requise pour vous connecter.";
             e.preventDefault();
@@ -222,7 +205,7 @@
           }
 
           if (!window.firebase || !firebase.auth) {
-            // firebase indisponible — laisser app.js gérer l'erreur
+            // laisser app.js gérer
             return;
           }
 
@@ -231,32 +214,37 @@
               .auth()
               .fetchSignInMethodsForEmail(email);
             if (!methods || methods.length === 0) {
-              // email non enregistré -> empêcher submit, afficher message rouge avec loader,
-              // basculer vers l'inscription et pré-remplir l'email
               e.preventDefault();
               errorEl.innerHTML =
                 "Aucun compte trouvé pour cet email. Redirection vers l'inscription <span class='inline-loader'></span>";
-              errorEl.style.color = "#e74c3c";
-
               setTimeout(() => {
-                // basculer UI
                 document.getElementById("loginBox").style.display = "none";
                 document.getElementById("registerBox").style.display = "block";
-                // pré-remplir email d'inscription
-                const regEmail = document.getElementById("registerEmail");
-                const regUsername = document.getElementById("registerUsername");
-                if (regEmail) regEmail.value = email;
-                if (regUsername) regUsername.focus();
-                // message effacé
+                document.getElementById("registerEmail").value = email;
+                document.getElementById("registerUsername").focus();
                 errorEl.textContent = "";
-              }, 1200);
+              }, 900);
             }
-            // si methods exist, laisser app.js continuer la tentative de connexion
           } catch (err) {
-            // en cas d'erreur (ex: quota), ne bloquer pas la soumission — app.js affichera erreur
             console.warn("Erreur vérification email:", err);
           }
         });
+
+        // bascule affichage
+        document
+          .getElementById("registerLink")
+          ?.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            document.getElementById("loginBox").style.display = "none";
+            document.getElementById("registerBox").style.display = "block";
+          });
+        document
+          .getElementById("loginLink")
+          ?.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            document.getElementById("registerBox").style.display = "none";
+            document.getElementById("loginBox").style.display = "block";
+          });
       })();
     </script>
   </body>
