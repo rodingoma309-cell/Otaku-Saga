@@ -1,5 +1,4 @@
-// Gestion connexion / inscription (compatible si Firestore absent)
-// Nécessite offline.js chargé avant ce fichier
+// Gestion connexion / inscription (sans bio, redirection vers accueil.html)
 
 const loginBox = document.getElementById("loginBox");
 const registerBox = document.getElementById("registerBox");
@@ -11,19 +10,16 @@ const errorMessage = document.getElementById("errorMessage");
 const registerErrorMessage = document.getElementById("registerErrorMessage");
 const alreadyConnectedEl = document.getElementById("alreadyConnected");
 
-// Récupérer auth / firestore si disponibles (index.html initialise firebase)
 const auth = window.firebase && firebase.auth ? firebase.auth() : null;
 const hasFirestore = window.firebase && firebase.firestore;
 const db = hasFirestore ? firebase.firestore() : null;
 
-// Basculer affichage
 registerLink?.addEventListener("click", (e) => {
   e.preventDefault();
   loginBox.style.display = "none";
   registerBox.style.display = "block";
   errorMessage.textContent = "";
 });
-
 loginLink?.addEventListener("click", (e) => {
   e.preventDefault();
   registerBox.style.display = "none";
@@ -49,9 +45,7 @@ registerForm?.addEventListener("submit", async (e) => {
   const email = document.getElementById("registerEmail").value.trim();
   const password = document.getElementById("registerPassword").value;
   const confirmPassword = document.getElementById("confirmPassword").value;
-  const bio = document.getElementById("registerBio").value.trim();
 
-  // Validations simples
   if (username.length < 3 || username.length > 20) {
     registerErrorMessage.textContent =
       "Le pseudo doit contenir entre 3 et 20 caractères.";
@@ -73,8 +67,7 @@ registerForm?.addEventListener("submit", async (e) => {
   }
 
   if (!auth) {
-    registerErrorMessage.textContent =
-      "Firebase Auth non disponible. Vérifiez les scripts dans index.html.";
+    registerErrorMessage.textContent = "Firebase Auth non disponible.";
     return;
   }
 
@@ -85,12 +78,11 @@ registerForm?.addEventListener("submit", async (e) => {
     );
     const user = userCredential.user;
 
-    // Mettre à jour le displayName si possible
     if (user && user.updateProfile) {
       await user.updateProfile({ displayName: username });
     }
 
-    // Enregistrer dans Firestore si disponible
+    // Stockage minimal dans Firestore si configuré (sans bio)
     if (db) {
       try {
         await db
@@ -99,7 +91,6 @@ registerForm?.addEventListener("submit", async (e) => {
           .set({
             email,
             username,
-            bio: bio || "",
             createdAt: firebase.firestore.FieldValue.serverTimestamp
               ? firebase.firestore.FieldValue.serverTimestamp()
               : new Date(),
@@ -109,19 +100,18 @@ registerForm?.addEventListener("submit", async (e) => {
               : new Date(),
           });
       } catch (err) {
-        console.warn("Erreur Firestore (non bloquante) :", err.message || err);
+        console.warn("Erreur Firestore (non bloquante):", err.message || err);
       }
     }
 
     registerErrorMessage.style.color = "#27ae60";
     registerErrorMessage.textContent = "Inscription réussie — redirection...";
 
-    // Rediriger vers index (ou laisser l'utilisateur se connecter)
+    // Après création l'utilisateur est déjà connecté : rediriger vers accueil.html
     setTimeout(() => {
-      window.location.href = "index.html";
-    }, 1200);
+      window.location.href = "accueil.html";
+    }, 900);
   } catch (error) {
-    // Messages d'erreur communs
     if (error.code === "auth/email-already-in-use") {
       registerErrorMessage.textContent = "Cet email est déjà utilisé.";
     } else if (error.code === "auth/invalid-email") {
@@ -152,19 +142,23 @@ loginForm?.addEventListener("submit", async (e) => {
   const password = document.getElementById("password").value;
 
   if (!auth) {
-    errorMessage.textContent =
-      "Firebase Auth non disponible. Vérifiez les scripts dans index.html.";
+    errorMessage.textContent = "Firebase Auth non disponible.";
     return;
   }
 
   try {
     await auth.signInWithEmailAndPassword(email, password);
-    // Redirection après connexion réussie
     window.location.href = "accueil.html";
   } catch (error) {
     if (error.code === "auth/user-not-found") {
       errorMessage.textContent =
-        "Aucun compte avec cet email. Veuillez vous inscrire.";
+        "Aucun compte avec cet email. Vous serez redirigé vers l'inscription.";
+      setTimeout(() => {
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("registerBox").style.display = "block";
+        const regEmail = document.getElementById("registerEmail");
+        if (regEmail) regEmail.value = email;
+      }, 900);
     } else if (error.code === "auth/wrong-password") {
       errorMessage.textContent = "Mot de passe incorrect.";
     } else {
@@ -174,12 +168,11 @@ loginForm?.addEventListener("submit", async (e) => {
   }
 });
 
-// Afficher message si déjà connecté
+// Afficher si déjà connecté
 if (auth) {
   auth.onAuthStateChanged((user) => {
     if (user) {
       alreadyConnectedEl && (alreadyConnectedEl.style.display = "block");
-      // masquer le formulaire de connexion pour éviter double action
       loginForm && (loginForm.style.display = "none");
     } else {
       alreadyConnectedEl && (alreadyConnectedEl.style.display = "none");
