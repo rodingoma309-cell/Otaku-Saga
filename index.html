@@ -5,6 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Otaku Saga - Connexion</title>
     <link rel="stylesheet" href="auth.css" />
+    <style>
+      /* petit loader et style message d'erreur */
+      .inline-loader {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+        vertical-align: middle;
+        margin-left: 8px;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      /* forcer message d'erreur en rouge */
+      .error-message {
+        color: #e74c3c;
+      }
+    </style>
+
     <!--Firebase App(core SDK)-->
     <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js"></script>
     <!--Firebase Auth-->
@@ -176,5 +200,64 @@
     </script>
     <script src="offline.js"></script>
     <script src="app.js"></script>
+
+    <script>
+      // Vérifie si email existe avant d'essayer de se connecter.
+      // Si pas d'email trouvé : affiche message rouge, redirige vers inscription et pré-remplit email.
+      (function () {
+        const loginForm = document.getElementById("loginForm");
+        const errorEl = document.getElementById("errorMessage");
+
+        loginForm?.addEventListener("submit", async function (e) {
+          const emailInput = document.getElementById("email");
+          const email = (emailInput?.value || "").trim();
+          if (!email) return; // laisser app.js gérer la validation
+
+          if (!navigator.onLine) {
+            // OfflineManager gère déjà normalement, mais on assure
+            errorEl.textContent =
+              "Connexion Internet requise pour vous connecter.";
+            e.preventDefault();
+            return;
+          }
+
+          if (!window.firebase || !firebase.auth) {
+            // firebase indisponible — laisser app.js gérer l'erreur
+            return;
+          }
+
+          try {
+            const methods = await firebase
+              .auth()
+              .fetchSignInMethodsForEmail(email);
+            if (!methods || methods.length === 0) {
+              // email non enregistré -> empêcher submit, afficher message rouge avec loader,
+              // basculer vers l'inscription et pré-remplir l'email
+              e.preventDefault();
+              errorEl.innerHTML =
+                "Aucun compte trouvé pour cet email. Redirection vers l'inscription <span class='inline-loader'></span>";
+              errorEl.style.color = "#e74c3c";
+
+              setTimeout(() => {
+                // basculer UI
+                document.getElementById("loginBox").style.display = "none";
+                document.getElementById("registerBox").style.display = "block";
+                // pré-remplir email d'inscription
+                const regEmail = document.getElementById("registerEmail");
+                const regUsername = document.getElementById("registerUsername");
+                if (regEmail) regEmail.value = email;
+                if (regUsername) regUsername.focus();
+                // message effacé
+                errorEl.textContent = "";
+              }, 1200);
+            }
+            // si methods exist, laisser app.js continuer la tentative de connexion
+          } catch (err) {
+            // en cas d'erreur (ex: quota), ne bloquer pas la soumission — app.js affichera erreur
+            console.warn("Erreur vérification email:", err);
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
