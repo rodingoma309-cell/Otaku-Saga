@@ -5,37 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Otaku Saga - Connexion</title>
     <link rel="stylesheet" href="auth.css" />
-    <style>
-      .inline-loader {
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-top-color: #fff;
-        border-radius: 50%;
-        animation: spin 0.9s linear infinite;
-        vertical-align: middle;
-        margin-left: 8px;
-      }
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-      .error-message {
-        color: #e74c3c;
-      }
-    </style>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js"></script>
   </head>
+
   <body>
     <div class="auth-container">
-      <!-- CONNEXION -->
-      <div class="auth-box" id="loginBox">
+      <div class="auth-box">
         <div class="logo-section">
           <h1 class="app-title">🎌 Otaku Saga</h1>
           <p class="app-subtitle">Votre portail vers l'univers des mangas</p>
@@ -67,6 +41,7 @@
           </div>
 
           <button type="submit" class="btn-auth">Se connecter</button>
+
           <div id="errorMessage" class="error-message"></div>
         </form>
 
@@ -96,156 +71,8 @@
           </div>
         </div>
       </div>
-
-      <!-- INSCRIPTION (sans bio) -->
-      <div class="auth-box" id="registerBox" style="display: none">
-        <div class="logo-section">
-          <h1 class="app-title">🎌 Otaku Saga</h1>
-          <p class="app-subtitle">Créez votre compte</p>
-        </div>
-
-        <form id="registerForm" class="auth-form">
-          <div class="form-group">
-            <label for="registerUsername">Nom d'utilisateur</label>
-            <input
-              type="text"
-              id="registerUsername"
-              name="username"
-              required
-              placeholder="Votre pseudo"
-              minlength="3"
-              maxlength="20"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="registerEmail">Email</label>
-            <input
-              type="email"
-              id="registerEmail"
-              name="email"
-              required
-              placeholder="votre@email.com"
-              autocomplete="email"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="registerPassword">Mot de passe</label>
-            <input
-              type="password"
-              id="registerPassword"
-              name="password"
-              required
-              placeholder="••••••••"
-              minlength="6"
-              autocomplete="new-password"
-            />
-            <small style="color: #7f8c8d; display: block; margin-top: 5px"
-              >Minimum 6 caractères</small
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="confirmPassword">Confirmer le mot de passe</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              required
-              placeholder="••••••••"
-              autocomplete="new-password"
-            />
-          </div>
-
-          <button type="submit" class="btn-auth">S'inscrire</button>
-          <div id="registerErrorMessage" class="error-message"></div>
-        </form>
-
-        <div class="auth-footer">
-          <p>
-            Vous avez déjà un compte ?
-            <a href="#" id="loginLink">Se connecter</a>
-          </p>
-        </div>
-      </div>
     </div>
 
-    <script>
-      const firebaseConfig = {
-        apiKey: "AIzaSyDmLoRd1Plxm8TVtHQaIumVZuJIFUkND5k",
-        authDomain: "donatien-c5fd7.firebaseapp.com",
-        projectId: "donatien-c5fd7",
-        storageBucket: "donatien-c5fd7.appspot.com",
-        messagingSenderId: "96281887961",
-        appId: "1:96281887961:web:0752bc0976cbb3012c6ac8",
-      };
-      firebase.initializeApp(firebaseConfig);
-    </script>
-
-    <script src="offline.js"></script>
     <script src="app.js"></script>
-
-    <script>
-      // vérifier existence email avant tentative connexion -> rediriger vers inscription si absent
-      (function () {
-        const loginForm = document.getElementById("loginForm");
-        const errorEl = document.getElementById("errorMessage");
-
-        loginForm?.addEventListener("submit", async function (e) {
-          const emailInput = document.getElementById("email");
-          const email = (emailInput?.value || "").trim();
-          if (!email) return;
-
-          if (!navigator.onLine) {
-            errorEl.textContent =
-              "Connexion Internet requise pour vous connecter.";
-            e.preventDefault();
-            return;
-          }
-
-          if (!window.firebase || !firebase.auth) {
-            // laisser app.js gérer
-            return;
-          }
-
-          try {
-            const methods = await firebase
-              .auth()
-              .fetchSignInMethodsForEmail(email);
-            if (!methods || methods.length === 0) {
-              e.preventDefault();
-              errorEl.innerHTML =
-                "Aucun compte trouvé pour cet email. Redirection vers l'inscription <span class='inline-loader'></span>";
-              setTimeout(() => {
-                document.getElementById("loginBox").style.display = "none";
-                document.getElementById("registerBox").style.display = "block";
-                document.getElementById("registerEmail").value = email;
-                document.getElementById("registerUsername").focus();
-                errorEl.textContent = "";
-              }, 900);
-            }
-          } catch (err) {
-            console.warn("Erreur vérification email:", err);
-          }
-        });
-
-        // bascule affichage
-        document
-          .getElementById("registerLink")
-          ?.addEventListener("click", (ev) => {
-            ev.preventDefault();
-            document.getElementById("loginBox").style.display = "none";
-            document.getElementById("registerBox").style.display = "block";
-          });
-        document
-          .getElementById("loginLink")
-          ?.addEventListener("click", (ev) => {
-            ev.preventDefault();
-            document.getElementById("registerBox").style.display = "none";
-            document.getElementById("loginBox").style.display = "block";
-          });
-      })();
-    </script>
   </body>
 </html>
