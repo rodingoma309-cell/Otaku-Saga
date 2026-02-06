@@ -1,36 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Otaku Saga - Actus</title>
-    <link rel="stylesheet" href="auth.css" />
-    <style>
-      .actus-list {
-        max-width: 1000px;
-        margin: 24px auto;
-        padding: 0 16px;
-      }
-      .actus-item {
-        background: white;
-        padding: 16px;
-        border-radius: 8px;
-        margin-bottom: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-      }
-      .chapter {
-        font-weight: 600;
-        color: #333;
-      }
-      .meta {
-        color: #7f8c8d;
-        font-size: 13px;
-        margin-top: 6px;
-      }
-    </style>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Otaku Saga - Actualités Manga</title>
+    <link rel="stylesheet" href="actus.css" />
   </head>
   <body>
     <nav class="navbar">
@@ -126,70 +100,5 @@
     <script src="mangas.js"></script>
     <script src="actus.js"></script>
     <script src="common-nav.js"></script>
-    <script>
-      const firebaseConfig = {
-        apiKey: "AIzaSyDmLoRd1Plxm8TVtHQaIumVZuJIFUkND5k",
-        authDomain: "donatien-c5fd7.firebaseapp.com",
-        projectId: "donatien-c5fd7",
-        storageBucket: "donatien-c5fd7.appspot.com",
-        messagingSenderId: "96281887961",
-        appId: "1:96281887961:web:0752bc0976cbb3012c6ac8",
-      };
-      firebase.initializeApp(firebaseConfig);
-      const db = firebase.firestore();
-
-      async function loadActus() {
-        const listEl = document.getElementById("list");
-        const loading = document.getElementById("loading");
-        try {
-          // récupérer derniers documents, ordonner par createdAt desc
-          const snap = await db
-            .collection("actus")
-            .orderBy("createdAt", "desc")
-            .limit(50)
-            .get();
-          loading.style.display = "none";
-          if (snap.empty) {
-            listEl.innerHTML = "<p>Aucune actualité récente.</p>";
-            return;
-          }
-          const html = [];
-          snap.forEach((doc) => {
-            const data = doc.data();
-            const week = data.week || "";
-            const title = data.mangaTitle || "Manga";
-            const updates = data.updates || [];
-            const itemsHtml = updates
-              .map(
-                (u) => `
-              <div>
-                <div class="chapter">${
-                  u.title || "Chap. " + (u.chapter || "?")
-                } ${u.volume ? "(Vol " + u.volume + ")" : ""}</div>
-                <div class="meta">${u.language || ""} — publié: ${new Date(
-                  u.publishAt
-                ).toLocaleString("fr-FR")} — <a href="${
-                  u.link
-                }" target="_blank" rel="noopener">Voir</a></div>
-              </div>
-            `
-              )
-              .join("");
-            html.push(`
-            <article class="actus-item">
-              <h3>${title} <small style="font-weight:600;color:#667eea"> — semaine ${week}</small></h3>
-              ${itemsHtml}
-            </article>
-          `);
-          });
-          listEl.innerHTML = html.join("");
-        } catch (err) {
-          loading.textContent =
-            "Erreur chargement actus: " + (err.message || err);
-        }
-      }
-
-      loadActus();
-    </script>
   </body>
 </html>
