@@ -15,10 +15,28 @@ function checkAuth() {
   ];
 
   if (protectedPages.includes(currentPage) && !isAuthenticated) {
-    window.location.href = "auth.html";
+    window.location.href = "index.html";
     return false;
   }
 
+  return true;
+}
+
+// === ADMIN SECRETS (MOT DE PASSE CACHÉ) ===
+const ADMIN_EMAILS = ['admin@otaku.com', 'admin@saga.com'];
+const ADMIN_PASSWORD = 'OtakuSaga2026!'; // SECRET - Changez-le !
+
+// Vérifier si admin connecté
+function isAdmin() {
+  return localStorage.getItem('isAdmin') === 'true';
+}
+
+// Page admin protégée
+function checkAdminAuth() {
+  if (!isAdmin()) {
+    window.location.href = 'index.html';
+    return false;
+  }
   return true;
 }
 
@@ -30,10 +48,16 @@ document.addEventListener("DOMContentLoaded", function () {
     window.location.pathname.split("/").pop() ||
     window.location.href.split("/").pop();
 
+  // Page admin.html
+  if (currentPage === 'admin.html') {
+    if (!checkAdminAuth()) return;
+    initAdminDashboard();
+  }
+
   if (
-    currentPage === "auth.html" ||
+    currentPage === "index.html" ||
     currentPage === "" ||
-    currentPage.includes("auth.html")
+    currentPage.includes("index.html")
   ) {
     const isAuthenticated = localStorage.getItem("isAuthenticated");
     if (isAuthenticated) {
@@ -50,12 +74,17 @@ document.addEventListener("DOMContentLoaded", function () {
     loginForm.addEventListener("submit", handleLogin);
   }
 
-  // === AJOUT : Gestion formulaire d'inscription ===
+  // Gestion formulaire d'inscription
   const registerForm = document.getElementById("registerForm");
   if (registerForm) {
     registerForm.addEventListener("submit", handleRegister);
   }
-  // === FIN AJOUT ===
+
+  // Bouton admin
+  const adminLoginBtn = document.getElementById('adminLoginBtn');
+  if (adminLoginBtn) {
+    adminLoginBtn.addEventListener('click', handleAdminLogin);
+  }
 
   // Gestion bouton déconnexion
   const logoutBtn = document.getElementById("logoutBtn");
@@ -63,17 +92,17 @@ document.addEventListener("DOMContentLoaded", function () {
     logoutBtn.addEventListener("click", handleLogout);
   }
 
-  // Lien inscription (mise à jour pour redirection)
+  // Lien inscription
   const registerLink = document.getElementById("registerLink");
   if (registerLink) {
     registerLink.addEventListener("click", function (e) {
       e.preventDefault();
-      window.location.href = "inscription.html"; // Redirection vers inscription
+      window.location.href = "inscription.html";
     });
   }
 });
 
-// Gérer la connexion
+// Gérer la connexion utilisateur
 function handleLogin(e) {
   e.preventDefault();
 
@@ -93,85 +122,209 @@ function handleLogin(e) {
     return;
   }
 
-  // === AJOUT : Vérification utilisateur inscrit ===
-  const users = JSON.parse(localStorage.getItem("otakuSagaUsers") || "[]");
-  const user = users.find((u) => u.email === email && u.password === password);
+  // Vérifier admin d'abord
+  if (ADMIN_EMAILS.includes(email) && password === ADMIN_PASSWORD) {
+    localStorage.setItem('isAdmin', 'true');
+    localStorage.setItem('adminEmail', email);
+    window.location.href = 'admin.html';
+    return;
+  }
 
-  if (!user) {
+  // Vérification utilisateur normal
+  const users = JSON.parse(localStorage.getItem('otakuSagaUsers') || '[]');
+  const user = users.find(u => u.email === email && u.password === password);
+  
+  if (!user || user.banned) {
     showError("❌ Email ou mot de passe incorrect. Inscrivez-vous d'abord.");
     return;
   }
-  // === FIN AJOUT ===
 
-  //je stocke egalement l'adresse email de l'utilisateur
   localStorage.setItem("isAuthenticated", "true");
   localStorage.setItem("email", email);
-
   window.location.href = "accueil.html";
 }
 
-// === AJOUT COMPLET : Fonction d'inscription ===
+// Login Admin (bouton dédié)
+function handleAdminLogin() {
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+  
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+
+  if (ADMIN_EMAILS.includes(email) && password === ADMIN_PASSWORD) {
+    localStorage.setItem('isAdmin', 'true');
+    localStorage.setItem('adminEmail', email);
+    window.location.href = 'admin.html';
+  } else {
+    showError("❌ Accès Admin refusé. Contactez le support.");
+  }
+}
+
+// Gérer l'inscription
 function handleRegister(e) {
   e.preventDefault();
 
   const regEmailInput = document.getElementById("regEmail");
   const regPasswordInput = document.getElementById("regPassword");
   const regErrorMessage = document.getElementById("regErrorMessage");
-  const regSuccessMessage = document.getElementById("regSuccessMessage");
 
   const email = regEmailInput.value.trim();
   const password = regPasswordInput.value.trim();
 
   if (!email || !password) {
-    if (regErrorMessage)
-      regErrorMessage.textContent = "Veuillez remplir tous les champs";
+    if (regErrorMessage) regErrorMessage.textContent = "Veuillez remplir tous les champs";
     return;
   }
 
   if (password.length < 6) {
-    if (regErrorMessage)
-      regErrorMessage.textContent =
-        "Le mot de passe doit faire au moins 6 caractères";
+    if (regErrorMessage) regErrorMessage.textContent = "Le mot de passe doit faire au moins 6 caractères";
     return;
   }
 
-  const users = JSON.parse(localStorage.getItem("otakuSagaUsers") || "[]");
-
-  if (users.find((u) => u.email === email)) {
-    if (regErrorMessage)
-      regErrorMessage.textContent = "Cet email est déjà utilisé";
+  const users = JSON.parse(localStorage.getItem('otakuSagaUsers') || '[]');
+  
+  if (ADMIN_EMAILS.includes(email)) {
+    if (regErrorMessage) regErrorMessage.textContent = "Email réservé pour administration";
+    return;
+  }
+  
+  if (users.find(u => u.email === email)) {
+    if (regErrorMessage) regErrorMessage.textContent = "Cet email est déjà utilisé";
     return;
   }
 
-  users.push({ email, password });
-  localStorage.setItem("otakuSagaUsers", JSON.stringify(users));
+  users.push({ 
+    email, 
+    password, 
+    role: 'user',
+    createdAt: new Date().toISOString(),
+    banned: false 
+  });
+  localStorage.setItem('otakuSagaUsers', JSON.stringify(users));
 
   localStorage.setItem("isAuthenticated", "true");
   localStorage.setItem("email", email);
-
-  if (regSuccessMessage) {
-    regSuccessMessage.textContent = "✅ Inscription réussie ! Redirection...";
-    regSuccessMessage.style.display = "block";
-  }
-
-  setTimeout(() => {
-    window.location.href = "index.html";
-  }, 1500);
+  
+  alert('✅ Inscription réussie ! Redirection...');
+  setTimeout(() => window.location.href = "index.html", 1500);
 }
-// === FIN AJOUT ===
 
-// Gérer la déconnexion
+// Admin Dashboard
+function initAdminDashboard() {
+  loadAdminData();
+  setupAdminActions();
+}
+
+function loadAdminData() {
+  const users = JSON.parse(localStorage.getItem('otakuSagaUsers') || '[]');
+  const stats = {
+    totalUsers: users.length,
+    activeUsers: users.filter(u => localStorage.getItem('email') === u.email).length,
+    bannedUsers: users.filter(u => u.banned).length
+  };
+  
+  document.getElementById('totalUsers').textContent = stats.totalUsers;
+  document.getElementById('activeUsers').textContent = stats.activeUsers;
+  document.getElementById('bannedUsers').textContent = stats.bannedUsers;
+  
+  displayUsersList(users);
+}
+
+function displayUsersList(users) {
+  const tbody = document.querySelector('#usersTable tbody');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  users.forEach((user, index) => {
+    const row = `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${user.email}</td>
+        <td>${user.role || 'user'}</td>
+        <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-FR') : 'N/A'}</td>
+        <td style="color: ${user.banned ? 'red' : 'green'}">
+          ${user.banned ? '🚫 Banni' : '✅ Actif'}
+        </td>
+        <td>
+          <button onclick="toggleBan('${user.email}')" class="btn-small ${user.banned ? 'btn-success' : 'btn-danger'}">
+            ${user.banned ? 'Débanir' : 'Bannir'}
+          </button>
+          <button onclick="changeRole('${user.email}')" class="btn-small btn-warning">Rôle</button>
+          <button onclick="deleteUser('${user.email}')" class="btn-small btn-danger">Suppr</button>
+        </td>
+      </tr>
+    `;
+    tbody.innerHTML += row;
+  });
+}
+
+function setupAdminActions() {
+  const searchInput = document.getElementById('searchUser');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      filterUsers(this.value);
+    });
+  }
+  
+  const adminLogout = document.getElementById('adminLogout');
+  if (adminLogout) {
+    adminLogout.addEventListener('click', function() {
+      localStorage.removeItem('isAdmin');
+      localStorage.removeItem('adminEmail');
+      window.location.href = 'index.html';
+    });
+  }
+}
+
+function toggleBan(email) {
+  const users = JSON.parse(localStorage.getItem('otakuSagaUsers') || '[]');
+  const userIndex = users.findIndex(u => u.email === email);
+  
+  if (userIndex !== -1) {
+    users[userIndex].banned = !users[userIndex].banned;
+    localStorage.setItem('otakuSagaUsers', JSON.stringify(users));
+    loadAdminData();
+    alert(users[userIndex].banned ? '👮 Utilisateur banni !' : '✅ Utilisateur débanni !');
+  }
+}
+
+function changeRole(email) {
+  const users = JSON.parse(localStorage.getItem('otakuSagaUsers') || '[]');
+  const userIndex = users.findIndex(u => u.email === email);
+  const newRole = prompt('Nouveau rôle (user/moderator):', users[userIndex]?.role || 'user');
+  
+  if (userIndex !== -1 && newRole) {
+    users[userIndex].role = newRole.toLowerCase();
+    localStorage.setItem('otakuSagaUsers', JSON.stringify(users));
+    loadAdminData();
+  }
+}
+
+function deleteUser(email) {
+  if (confirm('Supprimer définitivement cet utilisateur ?')) {
+    let users = JSON.parse(localStorage.getItem('otakuSagaUsers') || '[]');
+    users = users.filter(u => u.email !== email);
+    localStorage.setItem('otakuSagaUsers', JSON.stringify(users));
+    loadAdminData();
+  }
+}
+
+function filterUsers(query) {
+  const users = JSON.parse(localStorage.getItem('otakuSagaUsers') || '[]');
+  const filtered = users.filter(u => u.email.toLowerCase().includes(query.toLowerCase()));
+  displayUsersList(filtered);
+}
+
 function handleLogout(e) {
   e.preventDefault();
   if (confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) {
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("email");
-    localStorage.removeItem("otakuSagaUsers"); // Nettoyage
-    window.location.href = "auth.html";
+    window.location.href = "index.html";
   }
 }
 
-// Afficher un message d'erreur
 function showError(message) {
   const errorMessage = document.getElementById("errorMessage");
   if (errorMessage) {
@@ -183,6 +336,13 @@ function showError(message) {
   }
 }
 
-// Exporter les fonctions pour d'autres fichiers
+// Exposer fonctions globales
 window.checkAuth = checkAuth;
 window.handleLogout = handleLogout;
+window.isAdmin = isAdmin;
+window.checkAdminAuth = checkAdminAuth;
+window.loadAdminData = loadAdminData;
+window.toggleBan = toggleBan;
+window.changeRole = changeRole;
+window.deleteUser = deleteUser;
+window.filterUsers = filterUsers;
