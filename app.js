@@ -40,6 +40,53 @@ function checkAdminAuth() {
   return true;
 }
 
+// === MESSAGE BIENVENUE PERSONNALISÉ POUR TOUS LES EMAILS ===
+function extractNameFromEmail(email) {
+  // 1. Prendre partie AVANT @ 
+  let name = email.split('@')[0].toLowerCase();
+  // 2. Supprimer chiffres et caractères spéciaux
+  name = name.replace(/[^a-zA-Z\s]/g, ' ');
+  // 3. Nettoyer espaces multiples
+  name = name.replace(/\s+/g, ' ').trim();
+  // 4. Première lettre majuscule
+  return name.charAt(0).toUpperCase() + name.slice(1) || 'Utilisateur';
+}
+
+function showWelcomeMessage() {
+  const email = localStorage.getItem('email');
+  if (!email || sessionStorage.getItem('welcomeShown')) return;
+  
+  const name = extractNameFromEmail(email);
+  const welcomeMsg = document.createElement('div');
+  welcomeMsg.id = 'welcomeMsg';
+  welcomeMsg.style.cssText = `
+    position: fixed; top: 20px; right: 20px; z-index: 9999;
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    color: white; padding: 20px 30px; border-radius: 50px;
+    box-shadow: 0 10px 30px rgba(108, 92, 231, 0.4);
+    font-weight: 600; font-size: 18px; max-width: 350px;
+    animation: slideIn 0.5s ease, slideOut 0.5s 4.5s forwards;
+  `;
+  welcomeMsg.innerHTML = `🎌 Bienvenue à Otaku-Saga <strong>${name}</strong> !`;
+  
+  document.head.insertAdjacentHTML('beforeend', `
+    <style>
+      @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+      @keyframes slideOut { to { transform: translateX(100%); opacity: 0; } }
+    </style>
+  `);
+  
+  document.body.appendChild(welcomeMsg);
+  sessionStorage.setItem('welcomeShown', 'true');
+  
+  setTimeout(() => {
+    const welcomeMsg = document.getElementById('welcomeMsg');
+    if (welcomeMsg) welcomeMsg.remove();
+    const style = document.querySelector('style:last-of-type');
+    if (style) style.remove();
+  }, 5000);
+}
+
 // Initialisation au chargement
 document.addEventListener("DOMContentLoaded", function () {
   checkAuth();
@@ -52,6 +99,13 @@ document.addEventListener("DOMContentLoaded", function () {
   if (currentPage === 'admin.html') {
     if (!checkAdminAuth()) return;
     initAdminDashboard();
+  }
+
+  // Message bienvenue sur pages protégées
+  const isAuthenticated = localStorage.getItem("isAuthenticated");
+  const protectedPages = ["accueil.html", "actus.html", "service.html", "contact.html", "apropos.html", "lecture.html"];
+  if (protectedPages.includes(currentPage) && isAuthenticated) {
+    setTimeout(showWelcomeMessage, 800);
   }
 
   if (
@@ -126,6 +180,7 @@ function handleLogin(e) {
   if (ADMIN_EMAILS.includes(email) && password === ADMIN_PASSWORD) {
     localStorage.setItem('isAdmin', 'true');
     localStorage.setItem('adminEmail', email);
+    sessionStorage.removeItem('welcomeShown');
     window.location.href = 'admin.html';
     return;
   }
@@ -141,6 +196,7 @@ function handleLogin(e) {
 
   localStorage.setItem("isAuthenticated", "true");
   localStorage.setItem("email", email);
+  sessionStorage.removeItem('welcomeShown');
   window.location.href = "accueil.html";
 }
 
@@ -155,6 +211,7 @@ function handleAdminLogin() {
   if (ADMIN_EMAILS.includes(email) && password === ADMIN_PASSWORD) {
     localStorage.setItem('isAdmin', 'true');
     localStorage.setItem('adminEmail', email);
+    sessionStorage.removeItem('welcomeShown');
     window.location.href = 'admin.html';
   } else {
     showError("❌ Accès Admin refusé. Contactez le support.");
@@ -205,6 +262,7 @@ function handleRegister(e) {
 
   localStorage.setItem("isAuthenticated", "true");
   localStorage.setItem("email", email);
+  sessionStorage.removeItem('welcomeShown');
   
   alert('✅ Inscription réussie ! Redirection...');
   setTimeout(() => window.location.href = "index.html", 1500);
@@ -321,6 +379,7 @@ function handleLogout(e) {
   if (confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) {
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("email");
+    sessionStorage.clear();
     window.location.href = "index.html";
   }
 }
