@@ -40,15 +40,11 @@ function checkAdminAuth() {
   return true;
 }
 
-// === MESSAGE BIENVENUE PERSONNALISÉ POUR TOUS LES EMAILS (CORRIGÉ) ===
+// === MESSAGE BIENVENUE PERSONNALISÉ (CORRIGÉ) ===
 function extractNameFromEmail(email) {
-  // 1. Prendre partie AVANT @ 
   let name = email.split('@')[0].toLowerCase();
-  // 2. Supprimer chiffres et caractères spéciaux ✅ CORRIGÉ
-  name = name.replace(/[^a-zA-Z\s]/g, ' ');
-  // 3. Nettoyer espaces multiples ✅ CORRIGÉ
-  name = name.replace(/\s+/g, ' ').trim();
-  // 4. Première lettre majuscule
+  name = name.replace(/[^a-zA-Z\s]/g, ' ');        // ✅ CORRIGÉ
+  name = name.replace(/\s+/g, ' ').trim();         // ✅ CORRIGÉ
   return name.charAt(0).toUpperCase() + name.slice(1) || 'Utilisateur';
 }
 
@@ -87,49 +83,55 @@ function showWelcomeMessage() {
   }, 5000);
 }
 
-// === SYSTÈME MULTI-NAVEIGATEURS (GLOBAL) ===
-const GLOBAL_USERS_KEY = 'otakuSagaUsers_GLOBAL_v1';
+// === SYSTÈME MULTI-NAVEIGATEURS GLOBAL + FORCAGE ===
+const GLOBAL_USERS_KEY = 'OtakuSaga_ALL_USERS_2026';  // ✅ GLOBAL UNIQUE
 
-// Fonction pour synchroniser localStorage vers global
-async function syncUsersGlobal() {
+// 🔄 SYNCHRO FORCÉE AUTOMATIQUE (toutes les 5s)
+setInterval(() => {
+  forceGlobalSync();
+}, 5000);
+
+// 🚀 FORCAGE GLOBAL ULTIME
+function forceGlobalSync() {
   try {
-    let globalUsers = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
+    let allUsers = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
     let localUsers = JSON.parse(localStorage.getItem('otakuSagaUsers') || '[]');
     
-    // Fusionner les utilisateurs (éviter doublons)
-    localUsers.forEach(localUser => {
-      if (!globalUsers.find(g => g.email === localUser.email)) {
-        globalUsers.push(localUser);
+    // FUSIONNER TOUS les utilisateurs
+    localUsers.forEach(user => {
+      if (!allUsers.find(u => u.email === user.email)) {
+        allUsers.push({...user, syncedFrom: 'local', syncedAt: new Date().toISOString()});
       }
     });
     
-    localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(globalUsers));
-    return globalUsers;
+    // SAUVEGARDER GLOBAL + LOCAL
+    localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(allUsers));
+    localStorage.setItem('otakuSagaUsers', JSON.stringify(allUsers));
+    
+    console.log('🔄 GLOBAL SYNC:', allUsers.length, 'utilisateurs');
   } catch(e) {
-    return JSON.parse(localStorage.getItem('otakuSagaUsers') || '[]');
+    console.error('Sync error:', e);
   }
 }
 
-// Vérification auth MULTI-NAVEIGATEURS
+// Vérification auth avec sync
 async function checkGlobalAuth() {
-  await syncUsersGlobal();
+  forceGlobalSync();
   return checkAuth();
 }
 
-// Connexion avec sync global
+// Connexion globale
 async function globalLogin(email, password) {
-  await syncUsersGlobal();
+  forceGlobalSync();
   const globalUsers = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
   return globalUsers.find(u => u.email === email && u.password === password);
 }
 
-// Initialisation au chargement (MULTI-NAVEIGATEURS)
+// Initialisation
 document.addEventListener("DOMContentLoaded", async function () {
   await checkGlobalAuth();
 
-  const currentPage =
-    window.location.pathname.split("/").pop() ||
-    window.location.href.split("/").pop();
+  const currentPage = window.location.pathname.split("/").pop() || window.location.href.split("/").pop();
 
   // Page admin.html
   if (currentPage === 'admin.html') {
@@ -137,52 +139,33 @@ document.addEventListener("DOMContentLoaded", async function () {
     initAdminDashboard();
   }
 
-  // Message bienvenue sur pages protégées
+  // Message bienvenue
   const isAuthenticated = localStorage.getItem("isAuthenticated");
   const protectedPages = ["accueil.html", "actus.html", "service.html", "contact.html", "apropos.html", "lecture.html"];
   if (protectedPages.includes(currentPage) && isAuthenticated) {
     setTimeout(showWelcomeMessage, 800);
   }
 
-  if (
-    currentPage === "index.html" ||
-    currentPage === "" ||
-    currentPage.includes("index.html")
-  ) {
-    const isAuthenticated = localStorage.getItem("isAuthenticated");
+  if (currentPage === "index.html" || currentPage === "" || currentPage.includes("index.html")) {
     if (isAuthenticated) {
       const alreadyConnectedDiv = document.getElementById("alreadyConnected");
-      if (alreadyConnectedDiv) {
-        alreadyConnectedDiv.style.display = "block";
-      }
+      if (alreadyConnectedDiv) alreadyConnectedDiv.style.display = "block";
     }
   }
 
-  // Gestion formulaire de connexion
+  // Event listeners existants...
   const loginForm = document.getElementById("loginForm");
-  if (loginForm) {
-    loginForm.addEventListener("submit", handleLogin);
-  }
+  if (loginForm) loginForm.addEventListener("submit", handleLogin);
 
-  // Gestion formulaire d'inscription
   const registerForm = document.getElementById("registerForm");
-  if (registerForm) {
-    registerForm.addEventListener("submit", handleRegister);
-  }
+  if (registerForm) registerForm.addEventListener("submit", handleRegister);
 
-  // Bouton admin
   const adminLoginBtn = document.getElementById('adminLoginBtn');
-  if (adminLoginBtn) {
-    adminLoginBtn.addEventListener('click', handleAdminLogin);
-  }
+  if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleAdminLogin);
 
-  // Gestion bouton déconnexion
   const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", handleLogout);
-  }
+  if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
 
-  // Lien inscription
   const registerLink = document.getElementById("registerLink");
   if (registerLink) {
     registerLink.addEventListener("click", function (e) {
@@ -192,13 +175,11 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 });
 
-// Gérer la connexion utilisateur (MULTI-NAVEIGATEURS)
+// Connexion (MULTI-NAVEIGATEURS)
 async function handleLogin(e) {
   e.preventDefault();
-
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
-
   const email = emailInput.value.trim();
   const password = passwordInput.value.trim();
 
@@ -212,7 +193,7 @@ async function handleLogin(e) {
     return;
   }
 
-  // Vérifier admin d'abord
+  // Admin
   if (ADMIN_EMAILS.includes(email) && password === ADMIN_PASSWORD) {
     localStorage.setItem('isAdmin', 'true');
     localStorage.setItem('adminEmail', email);
@@ -221,9 +202,8 @@ async function handleLogin(e) {
     return;
   }
 
-  // Vérification utilisateur MULTI-NAVEIGATEURS
+  // User global
   const user = await globalLogin(email, password);
-  
   if (!user || user.banned) {
     showError("❌ Email ou mot de passe incorrect. Inscrivez-vous d'abord.");
     return;
@@ -235,11 +215,10 @@ async function handleLogin(e) {
   window.location.href = "accueil.html";
 }
 
-// Login Admin (bouton dédié)
+// Admin login
 async function handleAdminLogin() {
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
-  
   const email = emailInput.value.trim();
   const password = passwordInput.value.trim();
 
@@ -249,14 +228,13 @@ async function handleAdminLogin() {
     sessionStorage.removeItem('welcomeShown');
     window.location.href = 'admin.html';
   } else {
-    showError("❌ Accès Admin refusé. Contactez le support.");
+    showError("❌ Accès Admin refusé.");
   }
 }
 
-// Gérer l'inscription (MULTI-NAVEIGATEURS)
+// Inscription (GLOBAL)
 async function handleRegister(e) {
   e.preventDefault();
-
   const regEmailInput = document.getElementById("regEmail");
   const regPasswordInput = document.getElementById("regPassword");
   const regErrorMessage = document.getElementById("regErrorMessage");
@@ -270,54 +248,50 @@ async function handleRegister(e) {
   }
 
   if (password.length < 6) {
-    if (regErrorMessage) regErrorMessage.textContent = "Le mot de passe doit faire au moins 6 caractères";
+    if (regErrorMessage) regErrorMessage.textContent = "Mot de passe trop court";
     return;
   }
 
-  // Sync global + vérification
-  await syncUsersGlobal();
+  forceGlobalSync();
   const globalUsers = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
   
   if (ADMIN_EMAILS.includes(email)) {
-    if (regErrorMessage) regErrorMessage.textContent = "Email réservé pour administration";
+    if (regErrorMessage) regErrorMessage.textContent = "Email réservé admin";
     return;
   }
   
   if (globalUsers.find(u => u.email === email)) {
-    if (regErrorMessage) regErrorMessage.textContent = "Cet email est déjà utilisé";
+    if (regErrorMessage) regErrorMessage.textContent = "Email déjà utilisé";
     return;
   }
 
-  // Ajouter utilisateur global
   const newUser = { 
-    email, 
-    password, 
-    role: 'user',
+    email, password, role: 'user',
     createdAt: new Date().toISOString(),
     banned: false 
   };
   
   globalUsers.push(newUser);
   localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(globalUsers));
-  localStorage.setItem('otakuSagaUsers', JSON.stringify(globalUsers)); // Backup local
+  localStorage.setItem('otakuSagaUsers', JSON.stringify(globalUsers));
 
   localStorage.setItem("isAuthenticated", "true");
   localStorage.setItem("email", email);
   sessionStorage.removeItem('welcomeShown');
   
-  alert('✅ Inscription réussie ! Redirection...');
+  alert('✅ Inscription réussie !');
   setTimeout(() => window.location.href = "index.html", 1500);
 }
 
-// Admin Dashboard (MULTI-NAVEIGATEURS)
+// Admin Dashboard GLOBAL
 async function initAdminDashboard() {
-  await syncUsersGlobal();
+  forceGlobalSync();
   loadAdminData();
   setupAdminActions();
 }
 
 async function loadAdminData() {
-  await syncUsersGlobal();
+  forceGlobalSync();
   const users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
   const stats = {
     totalUsers: users.length,
@@ -325,9 +299,9 @@ async function loadAdminData() {
     bannedUsers: users.filter(u => u.banned).length
   };
   
-  document.getElementById('totalUsers').textContent = stats.totalUsers;
-  document.getElementById('activeUsers').textContent = stats.activeUsers;
-  document.getElementById('bannedUsers').textContent = stats.bannedUsers;
+  if (document.getElementById('totalUsers')) document.getElementById('totalUsers').textContent = stats.totalUsers;
+  if (document.getElementById('activeUsers')) document.getElementById('activeUsers').textContent = stats.activeUsers;
+  if (document.getElementById('bannedUsers')) document.getElementById('bannedUsers').textContent = stats.bannedUsers;
   
   displayUsersList(users);
 }
@@ -379,25 +353,23 @@ async function setupAdminActions() {
 }
 
 async function toggleBan(email) {
-  await syncUsersGlobal();
+  forceGlobalSync();
   let users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
   const userIndex = users.findIndex(u => u.email === email);
-  
   if (userIndex !== -1) {
     users[userIndex].banned = !users[userIndex].banned;
     localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(users));
     localStorage.setItem('otakuSagaUsers', JSON.stringify(users));
     loadAdminData();
-    alert(users[userIndex].banned ? '👮 Utilisateur banni !' : '✅ Utilisateur débanni !');
+    alert(users[userIndex].banned ? '👮 Banni !' : '✅ Débanni !');
   }
 }
 
 async function changeRole(email) {
-  await syncUsersGlobal();
+  forceGlobalSync();
   let users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
   const userIndex = users.findIndex(u => u.email === email);
   const newRole = prompt('Nouveau rôle (user/moderator):', users[userIndex]?.role || 'user');
-  
   if (userIndex !== -1 && newRole) {
     users[userIndex].role = newRole.toLowerCase();
     localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(users));
@@ -407,8 +379,8 @@ async function changeRole(email) {
 }
 
 async function deleteUser(email) {
-  if (confirm('Supprimer définitivement cet utilisateur ?')) {
-    await syncUsersGlobal();
+  if (confirm('Supprimer définitivement ?')) {
+    forceGlobalSync();
     let users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
     users = users.filter(u => u.email !== email);
     localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(users));
@@ -418,7 +390,7 @@ async function deleteUser(email) {
 }
 
 async function filterUsers(query) {
-  await syncUsersGlobal();
+  forceGlobalSync();
   const users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
   const filtered = users.filter(u => u.email.toLowerCase().includes(query.toLowerCase()));
   displayUsersList(filtered);
@@ -426,7 +398,7 @@ async function filterUsers(query) {
 
 function handleLogout(e) {
   e.preventDefault();
-  if (confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) {
+  if (confirm("Déconnexion ?")) {
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("email");
     sessionStorage.clear();
@@ -439,13 +411,11 @@ function showError(message) {
   if (errorMessage) {
     errorMessage.textContent = message;
     errorMessage.classList.add("show");
-    setTimeout(() => {
-      errorMessage.classList.remove("show");
-    }, 5000);
+    setTimeout(() => errorMessage.classList.remove("show"), 5000);
   }
 }
 
-// Exposer fonctions globales
+// Exposer globalement
 window.checkAuth = checkAuth;
 window.handleLogout = handleLogout;
 window.isAdmin = isAdmin;
@@ -455,3 +425,6 @@ window.toggleBan = toggleBan;
 window.changeRole = changeRole;
 window.deleteUser = deleteUser;
 window.filterUsers = filterUsers;
+
+// 🚀 FORCAGE IMMÉDIAT
+forceGlobalSync();
