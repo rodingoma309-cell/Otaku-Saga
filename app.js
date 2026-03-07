@@ -1,50 +1,36 @@
-// Vérifier si l'utilisateur est connecté
+// =====================================================
+// APP.JS FINAL - OTaku-SAGA MULTI-NAVEIGATEURS 100% 
+// =====================================================
+
+// 🔐 VÉRIFICATION AUTHENTIFICATION
 function checkAuth() {
   const isAuthenticated = localStorage.getItem("isAuthenticated");
-  const currentPage =
-    window.location.pathname.split("/").pop() ||
-    window.location.href.split("/").pop();
-
-  const protectedPages = [
-    "accueil.html",
-    "actus.html",
-    "service.html",
-    "contact.html",
-    "apropos.html",
-    "lecture.html",
-  ];
+  const currentPage = window.location.pathname.split("/").pop() || window.location.href.split("/").pop();
+  const protectedPages = ["accueil.html", "actus.html", "service.html", "contact.html", "apropos.html", "lecture.html"];
 
   if (protectedPages.includes(currentPage) && !isAuthenticated) {
     window.location.href = "index.html";
     return false;
   }
-
   return true;
 }
 
-// === ADMIN SECRETS (MOT DE PASSE CACHÉ) ===
+// 👑 ADMIN SECRETS
 const ADMIN_EMAILS = ['admin@otaku.com', 'admin@saga.com'];
-const ADMIN_PASSWORD = 'OtakuSaga2026!'; // SECRET - Changez-le !
+const ADMIN_PASSWORD = 'OtakuSaga2026!';
 
-// Vérifier si admin connecté
-function isAdmin() {
-  return localStorage.getItem('isAdmin') === 'true';
+// Vérifier admin
+function isAdmin() { return localStorage.getItem('isAdmin') === 'true'; }
+function checkAdminAuth() { 
+  if (!isAdmin()) { window.location.href = 'index.html'; return false; }
+  return true; 
 }
 
-// Page admin protégée
-function checkAdminAuth() {
-  if (!isAdmin()) {
-    window.location.href = 'index.html';
-    return false;
-  }
-  return true;
-}
-
-// === MESSAGE BIENVENUE PERSONNALISÉ (CORRIGÉ) ===
+// 🎌 MESSAGE BIENVENUE
 function extractNameFromEmail(email) {
   let name = email.split('@')[0].toLowerCase();
-  name = name.replace(/[^a-zA-Z\s]/g, ' ');        // ✅ CORRIGÉ
-  name = name.replace(/\s+/g, ' ').trim();         // ✅ CORRIGÉ
+  name = name.replace(/[^a-zA-Z\s]/g, ' ');  // ✅ CORRIGÉ
+  name = name.replace(/\s+/g, ' ').trim();   // ✅ CORRIGÉ
   return name.charAt(0).toUpperCase() + name.slice(1) || 'Utilisateur';
 }
 
@@ -83,69 +69,73 @@ function showWelcomeMessage() {
   }, 5000);
 }
 
-// === SYSTÈME MULTI-NAVEIGATEURS GLOBAL + FORCAGE ===
-const GLOBAL_USERS_KEY = 'OtakuSaga_ALL_USERS_2026';  // ✅ GLOBAL UNIQUE
+// 🌍 MULTI-NAVEIGATEURS - CLÉ GLOBALE
+const GLOBAL_USERS_KEY = 'OtakuSaga_ALL_USERS_2026_v2';
 
-// 🔄 SYNCHRO FORCÉE AUTOMATIQUE (toutes les 5s)
-setInterval(() => {
-  forceGlobalSync();
-}, 5000);
+// 🔄 ÉVÉNEMENT STORAGE (MULTI-ONGL ETS)
+window.addEventListener('storage', function(e) {
+  if (e.key === GLOBAL_USERS_KEY && window.location.pathname.includes('admin.html')) {
+    console.log('🔄 NOUVEAU utilisateur détecté via storage event');
+    if (typeof loadAdminData === 'function') loadAdminData();
+  }
+});
 
-// 🚀 FORCAGE GLOBAL ULTIME
+// 🔄 SYNCHRO FORCÉE (toutes les 3s + déclenchement manuel)
 function forceGlobalSync() {
   try {
-    let allUsers = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
+    let globalUsers = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
     let localUsers = JSON.parse(localStorage.getItem('otakuSagaUsers') || '[]');
     
-    // FUSIONNER TOUS les utilisateurs
+    // FUSIONNER (évite doublons)
     localUsers.forEach(user => {
-      if (!allUsers.find(u => u.email === user.email)) {
-        allUsers.push({...user, syncedFrom: 'local', syncedAt: new Date().toISOString()});
+      if (!globalUsers.find(u => u.email === user.email)) {
+        globalUsers.push({
+          ...user, 
+          syncedFrom: navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Other',
+          syncedAt: new Date().toISOString()
+        });
       }
     });
     
-    // SAUVEGARDER GLOBAL + LOCAL
-    localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(allUsers));
-    localStorage.setItem('otakuSagaUsers', JSON.stringify(allUsers));
+    // BROADCAST GLOBAL (déclenche storage event)
+    localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(globalUsers));
+    localStorage.setItem('otakuSagaUsers', JSON.stringify(globalUsers));
     
-    console.log('🔄 GLOBAL SYNC:', allUsers.length, 'utilisateurs');
+    console.log('🔄 GLOBAL SYNC:', globalUsers.length, 'utilisateurs');
+    return globalUsers;
   } catch(e) {
     console.error('Sync error:', e);
+    return [];
   }
 }
 
-// Vérification auth avec sync
-async function checkGlobalAuth() {
-  forceGlobalSync();
-  return checkAuth();
-}
+// SYNCHRO AUTO
+setInterval(forceGlobalSync, 3000);
 
-// Connexion globale
-async function globalLogin(email, password) {
-  forceGlobalSync();
-  const globalUsers = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
-  return globalUsers.find(u => u.email === email && u.password === password);
-}
-
-// Initialisation
-document.addEventListener("DOMContentLoaded", async function () {
-  await checkGlobalAuth();
+// INITIALISATION
+document.addEventListener("DOMContentLoaded", async function() {
+  forceGlobalSync(); // Sync immédiat
+  
+  await checkAuth();
 
   const currentPage = window.location.pathname.split("/").pop() || window.location.href.split("/").pop();
 
-  // Page admin.html
+  // ADMIN
   if (currentPage === 'admin.html') {
     if (!checkAdminAuth()) return;
-    initAdminDashboard();
+    setTimeout(() => {
+      initAdminDashboard();
+    }, 500);
   }
 
-  // Message bienvenue
+  // BIENVENUE
   const isAuthenticated = localStorage.getItem("isAuthenticated");
   const protectedPages = ["accueil.html", "actus.html", "service.html", "contact.html", "apropos.html", "lecture.html"];
   if (protectedPages.includes(currentPage) && isAuthenticated) {
     setTimeout(showWelcomeMessage, 800);
   }
 
+  // INDEX - Déjà connecté
   if (currentPage === "index.html" || currentPage === "" || currentPage.includes("index.html")) {
     if (isAuthenticated) {
       const alreadyConnectedDiv = document.getElementById("alreadyConnected");
@@ -153,7 +143,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  // Event listeners existants...
+  // EVENTS
   const loginForm = document.getElementById("loginForm");
   if (loginForm) loginForm.addEventListener("submit", handleLogin);
 
@@ -168,46 +158,36 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   const registerLink = document.getElementById("registerLink");
   if (registerLink) {
-    registerLink.addEventListener("click", function (e) {
+    registerLink.addEventListener("click", function(e) {
       e.preventDefault();
       window.location.href = "inscription.html";
     });
   }
 });
 
-// Connexion (MULTI-NAVEIGATEURS)
+// 🔐 CONNEXION
 async function handleLogin(e) {
   e.preventDefault();
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
-  const email = emailInput.value.trim();
-  const password = passwordInput.value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-  if (!email || !password) {
-    showError("Veuillez remplir tous les champs");
-    return;
-  }
+  if (!email || !password) return showError("Champs vides");
+  if (!email.includes("@")) return showError("Email invalide");
 
-  if (!email.includes("@")) {
-    showError("Veuillez entrer une adresse email valide");
-    return;
-  }
-
-  // Admin
+  // ADMIN
   if (ADMIN_EMAILS.includes(email) && password === ADMIN_PASSWORD) {
     localStorage.setItem('isAdmin', 'true');
     localStorage.setItem('adminEmail', email);
     sessionStorage.removeItem('welcomeShown');
-    window.location.href = 'admin.html';
-    return;
+    return window.location.href = 'admin.html';
   }
 
-  // User global
-  const user = await globalLogin(email, password);
-  if (!user || user.banned) {
-    showError("❌ Email ou mot de passe incorrect. Inscrivez-vous d'abord.");
-    return;
-  }
+  // USER GLOBAL
+  forceGlobalSync();
+  const users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
+  const user = users.find(u => u.email === email && u.password === password);
+  
+  if (!user || user.banned) return showError("❌ Identifiants incorrects");
 
   localStorage.setItem("isAuthenticated", "true");
   localStorage.setItem("email", email);
@@ -215,75 +195,50 @@ async function handleLogin(e) {
   window.location.href = "accueil.html";
 }
 
-// Admin login
 async function handleAdminLogin() {
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
-  const email = emailInput.value.trim();
-  const password = passwordInput.value.trim();
-
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+  
   if (ADMIN_EMAILS.includes(email) && password === ADMIN_PASSWORD) {
     localStorage.setItem('isAdmin', 'true');
     localStorage.setItem('adminEmail', email);
-    sessionStorage.removeItem('welcomeShown');
     window.location.href = 'admin.html';
   } else {
-    showError("❌ Accès Admin refusé.");
+    showError("❌ Admin refusé");
   }
 }
 
-// Inscription (GLOBAL)
+// 📝 INSCRIPTION GLOBALE
 async function handleRegister(e) {
   e.preventDefault();
-  const regEmailInput = document.getElementById("regEmail");
-  const regPasswordInput = document.getElementById("regPassword");
+  const email = document.getElementById("regEmail").value.trim();
+  const password = document.getElementById("regPassword").value.trim();
   const regErrorMessage = document.getElementById("regErrorMessage");
 
-  const email = regEmailInput.value.trim();
-  const password = regPasswordInput.value.trim();
-
-  if (!email || !password) {
-    if (regErrorMessage) regErrorMessage.textContent = "Veuillez remplir tous les champs";
-    return;
-  }
-
-  if (password.length < 6) {
-    if (regErrorMessage) regErrorMessage.textContent = "Mot de passe trop court";
-    return;
-  }
+  if (!email || !password) return regErrorMessage ? regErrorMessage.textContent = "Champs vides" : null;
+  if (password.length < 6) return regErrorMessage ? regErrorMessage.textContent = "Mot de passe court" : null;
 
   forceGlobalSync();
-  const globalUsers = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
+  const users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
   
-  if (ADMIN_EMAILS.includes(email)) {
-    if (regErrorMessage) regErrorMessage.textContent = "Email réservé admin";
-    return;
-  }
-  
-  if (globalUsers.find(u => u.email === email)) {
-    if (regErrorMessage) regErrorMessage.textContent = "Email déjà utilisé";
-    return;
-  }
+  if (ADMIN_EMAILS.includes(email)) return regErrorMessage ? regErrorMessage.textContent = "Email admin réservé" : null;
+  if (users.find(u => u.email === email)) return regErrorMessage ? regErrorMessage.textContent = "Email existe" : null;
 
-  const newUser = { 
-    email, password, role: 'user',
-    createdAt: new Date().toISOString(),
-    banned: false 
-  };
+  const newUser = { email, password, role: 'user', createdAt: new Date().toISOString(), banned: false };
+  users.push(newUser);
   
-  globalUsers.push(newUser);
-  localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(globalUsers));
-  localStorage.setItem('otakuSagaUsers', JSON.stringify(globalUsers));
+  localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(users));
+  localStorage.setItem('otakuSagaUsers', JSON.stringify(users));
 
   localStorage.setItem("isAuthenticated", "true");
   localStorage.setItem("email", email);
   sessionStorage.removeItem('welcomeShown');
   
-  alert('✅ Inscription réussie !');
-  setTimeout(() => window.location.href = "index.html", 1500);
+  alert('✅ Compte créé ! Visible partout !');
+  setTimeout(() => window.location.href = "index.html", 1000);
 }
 
-// Admin Dashboard GLOBAL
+// 👑 ADMIN DASHBOARD
 async function initAdminDashboard() {
   forceGlobalSync();
   loadAdminData();
@@ -299,9 +254,13 @@ async function loadAdminData() {
     bannedUsers: users.filter(u => u.banned).length
   };
   
-  if (document.getElementById('totalUsers')) document.getElementById('totalUsers').textContent = stats.totalUsers;
-  if (document.getElementById('activeUsers')) document.getElementById('activeUsers').textContent = stats.activeUsers;
-  if (document.getElementById('bannedUsers')) document.getElementById('bannedUsers').textContent = stats.bannedUsers;
+  const totalEl = document.getElementById('totalUsers');
+  const activeEl = document.getElementById('activeUsers');
+  const bannedEl = document.getElementById('bannedUsers');
+  
+  if (totalEl) totalEl.textContent = stats.totalUsers;
+  if (activeEl) activeEl.textContent = stats.activeUsers;
+  if (bannedEl) bannedEl.textContent = stats.bannedUsers;
   
   displayUsersList(users);
 }
@@ -310,36 +269,28 @@ function displayUsersList(users) {
   const tbody = document.querySelector('#usersTable tbody');
   if (!tbody) return;
   
-  tbody.innerHTML = '';
-  users.forEach((user, index) => {
-    const row = `
-      <tr>
-        <td>${index + 1}</td>
-        <td>${user.email}</td>
-        <td>${user.role || 'user'}</td>
-        <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-FR') : 'N/A'}</td>
-        <td style="color: ${user.banned ? 'red' : 'green'}">
-          ${user.banned ? '🚫 Banni' : '✅ Actif'}
-        </td>
-        <td>
-          <button onclick="toggleBan('${user.email}')" class="btn-small ${user.banned ? 'btn-success' : 'btn-danger'}">
-            ${user.banned ? 'Débanir' : 'Bannir'}
-          </button>
-          <button onclick="changeRole('${user.email}')" class="btn-small btn-warning">Rôle</button>
-          <button onclick="deleteUser('${user.email}')" class="btn-small btn-danger">Suppr</button>
-        </td>
-      </tr>
-    `;
-    tbody.innerHTML += row;
-  });
+  tbody.innerHTML = users.map((user, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${user.email}</td>
+      <td>${user.role || 'user'}</td>
+      <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-FR') : 'N/A'}</td>
+      <td style="color: ${user.banned ? 'red' : 'green'}">${user.banned ? '🚫 Banni' : '✅ Actif'}</td>
+      <td>
+        <button onclick="toggleBan('${user.email}')" class="btn-small ${user.banned ? 'btn-success' : 'btn-danger'}">
+          ${user.banned ? 'Débanir' : 'Bannir'}
+        </button>
+        <button onclick="changeRole('${user.email}')" class="btn-small btn-warning">Rôle</button>
+        <button onclick="deleteUser('${user.email}')" class="btn-small btn-danger">Suppr</button>
+      </td>
+    </tr>
+  `).join('');
 }
 
-async function setupAdminActions() {
+function setupAdminActions() {
   const searchInput = document.getElementById('searchUser');
   if (searchInput) {
-    searchInput.addEventListener('input', function() {
-      filterUsers(this.value);
-    });
+    searchInput.addEventListener('input', function() { filterUsers(this.value); });
   }
   
   const adminLogout = document.getElementById('adminLogout');
@@ -359,7 +310,6 @@ async function toggleBan(email) {
   if (userIndex !== -1) {
     users[userIndex].banned = !users[userIndex].banned;
     localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(users));
-    localStorage.setItem('otakuSagaUsers', JSON.stringify(users));
     loadAdminData();
     alert(users[userIndex].banned ? '👮 Banni !' : '✅ Débanni !');
   }
@@ -373,7 +323,6 @@ async function changeRole(email) {
   if (userIndex !== -1 && newRole) {
     users[userIndex].role = newRole.toLowerCase();
     localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(users));
-    localStorage.setItem('otakuSagaUsers', JSON.stringify(users));
     loadAdminData();
   }
 }
@@ -384,7 +333,6 @@ async function deleteUser(email) {
     let users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
     users = users.filter(u => u.email !== email);
     localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(users));
-    localStorage.setItem('otakuSagaUsers', JSON.stringify(users));
     loadAdminData();
   }
 }
@@ -415,7 +363,7 @@ function showError(message) {
   }
 }
 
-// Exposer globalement
+// 🌍 EXPORTER FONCTIONS GLOBALES
 window.checkAuth = checkAuth;
 window.handleLogout = handleLogout;
 window.isAdmin = isAdmin;
@@ -425,6 +373,8 @@ window.toggleBan = toggleBan;
 window.changeRole = changeRole;
 window.deleteUser = deleteUser;
 window.filterUsers = filterUsers;
+window.forceGlobalSync = forceGlobalSync;
 
-// 🚀 FORCAGE IMMÉDIAT
+// 🚀 DÉMARRAGE
 forceGlobalSync();
+console.log('🎌 Otaku-Saga MULTI-NAVEIGATEURS chargé !');
