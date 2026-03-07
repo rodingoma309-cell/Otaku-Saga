@@ -1,11 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="otaku.png" />
-    <link rel="apple-touch-icon" href="otaku.png" />
-    <meta property="og:image" content="otaku.png" />
+	 <link rel="icon" type="image/png" href="nour.jpg">
+    <link rel="apple-touch-icon" href="nour.jpg">
+	 <meta property="og:image" content="nour.jpg">
     <title>Otaku Saga - Connexion</title>
     <link rel="stylesheet" href="auth.css" />
   </head>
@@ -52,6 +52,25 @@
           <p>
             Pas encore de compte ? <a href="#" id="registerLink">S'inscrire</a>
           </p>
+          
+          <!-- PORTAIL ADMINISTRATEUR SECRET -->
+          <div style="margin-top: 25px; padding: 20px; background: rgba(108, 92, 231, 0.05); border-radius: 12px; border: 1px solid rgba(108, 92, 231, 0.2);">
+            <p style="text-align: center; color: #6c5ce7; font-weight: 700; font-size: 16px; margin-bottom: 12px;">
+              🔐 Portail Administrateur
+            </p>
+            <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 15px;">
+              Accès réservé - Utilisez vos identifiants admin
+            </p>
+            <button 
+              id="adminLoginBtn" 
+              type="button"
+              class="btn-auth" 
+              style="background: linear-gradient(135deg, #6c5ce7, #a29bfe); width: 100%; font-weight: 600;"
+            >
+              👑 Accéder au Panneau Admin
+            </button>
+          </div>
+          
           <div
             id="alreadyConnected"
             style="
