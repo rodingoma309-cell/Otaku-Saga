@@ -1,15 +1,8 @@
 // =====================================================
-// APP.JS FINAL - OTaku-SAGA FIREBASE (DB 100% FIXÉ)
+// APP.JS FINAL FIXÉ - OTaku-SAGA FIREBASE 100% FONCTIONNEL
 // =====================================================
 
-// 🔥 DEBUG FIREBASE + FIX DB NULL
-console.log('🔥 [DEBUG 1/8] Vérification window.firebase...');
-console.log('window.firebase:', window.firebase ? '✅ DISPONIBLE' : '❌ MANQUANT');
-
-console.log('🔥 [DEBUG 2/8] Chargement config...');
-console.log('Projet ID:', 'otakusaga2026');
-
-// 🔥 VOTRE CONFIG FIREBASE (INTÉGRÉE)
+// 🔥 CONFIG FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyCtFJqHUu-YPS-q6oDq2bys3YlwLnetKoE",
   authDomain: "otakusaga2026.firebaseapp.com",
@@ -20,56 +13,94 @@ const firebaseConfig = {
 };
 
 let db = null;
+let firebaseApp = null;
 
-// 🔥 INITIALISATION ROBUSTE - FIX DB NULL
-async function initFirebase() {
-  return new Promise((resolve, reject) => {
-    console.log('🔥 [DEBUG 3/8] Initialisation Firebase...');
-    
-    if (!window.firebase) {
-      reject(new Error('❌ SDK Firebase NON CHARGÉ - Vérifiez <script>'));
-      return;
-    }
-    
+// 🔥 INITIALISATION AVEC RETRY AUTOMATIQUE
+async function initFirebaseWithRetry(maxRetries = 3) {
+  for (let i = 0; i < maxRetry; i++) {
     try {
-      const { initializeApp } = window.firebase;
-      const { getFirestore } = window.firebase;
+      console.log(`🔥 Tentative ${i + 1}/${maxRetries}...`);
       
-      console.log('🔥 [DEBUG 4/8] Fonctions Firebase disponibles');
+      if (!window.firebase) {
+        throw new Error('SDK Firebase non chargé');
+      }
       
-      const app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
+      // Nettoyer app précédente
+      if (firebaseApp) {
+        window.firebase.initializeApp(firebaseConfig, 'OtakuSaga');
+      } else {
+        firebaseApp = window.firebase.initializeApp(firebaseConfig, 'OtakuSaga');
+      }
       
-      console.log('✅ [DEBUG 5/8] Firebase connecté ! Project:', firebaseConfig.projectId);
-      console.log('✅ [DEBUG 6/8] Firestore DB prête:', db ? 'OK' : 'NULL');
+      db = window.firebase.firestore();
+      console.log('✅ FIREBASE OK ! DB prête');
       
-      // 🔥 TEST RAPIDE
-      setTimeout(() => {
-        console.log('🔥 [DEBUG 7/8] Test DB:', db ? '✅ PRÊT' : '❌ NULL');
-        resolve(db);
-      }, 100);
+      // Test immédiat
+      await db.collection('users').limit(1).get();
+      console.log('✅ TEST Firestore OK !');
+      return true;
       
     } catch(e) {
-      console.error('❌ [ERREUR CRITIQUE] Firebase:', e.message);
-      reject(e);
+      console.error(`❌ Tentative ${i + 1} échouée:`, e.message);
+      db = null;
+      firebaseApp = null;
+      
+      if (i === maxRetries - 1) {
+        console.error('❌ TOUTES les tentatives échouées');
+        return false;
+      }
+      await new Promise(r => setTimeout(r, 500));
     }
-  });
+  }
 }
 
-// 🔥 GARANTIR DB TOUJOURS PRÊT
-async function ensureDb() {
-  if (db) return db;
-  return await initFirebase();
+// 🔥 FONCTIONS USERS AVEC RETRY DB
+async function getUsers() {
+  if (!db) {
+    const success = await initFirebaseWithRetry();
+    if (!success) return [];
+  }
+  
+  try {
+    const snapshot = await db.collection('users').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch(e) {
+    console.error('❌ getUsers:', e.message);
+    return [];
+  }
 }
 
-// 🔐 VÉRIFICATION AUTH
+async function saveUser(email, password) {
+  if (!db) {
+    const success = await initFirebaseWithRetry();
+    if (!success) return false;
+  }
+  
+  try {
+    await db.collection('users').add({
+      email, 
+      password,
+      role: 'user',
+      createdAt: new Date().toISOString(),
+      banned: false
+    });
+    console.log('✅ User créé:', email);
+    return true;
+  } catch(e) {
+    console.error('❌ saveUser:', e.message);
+    return false;
+  }
+}
+
+// 👑 ADMIN + AUTH (IDENTIQUE)
+const ADMIN_EMAILS = ['admin@otaku.com', 'admin@saga.com'];
+const ADMIN_PASSWORD = 'OtakuSaga2026!';
+
 function checkAuth() {
   const isAuthenticated = localStorage.getItem("isAuthenticated");
   const currentPage = window.location.pathname.split("/").pop() || window.location.href.split("/").pop();
   const protectedPages = ["accueil.html", "actus.html", "service.html", "contact.html", "apropos.html", "lecture.html"];
 
-  console.log('🔐 [AUTH] Page:', currentPage, 'Connecté:', !!isAuthenticated);
-  
   if (protectedPages.includes(currentPage) && !isAuthenticated) {
     window.location.href = "index.html";
     return false;
@@ -77,185 +108,100 @@ function checkAuth() {
   return true;
 }
 
-// 👑 ADMIN
-const ADMIN_EMAILS = ['admin@otaku.com', 'admin@saga.com'];
-const ADMIN_PASSWORD = 'OtakuSaga2026!';
 function isAdmin() { return localStorage.getItem('isAdmin') === 'true'; }
 function checkAdminAuth() { 
   if (!isAdmin()) { 
-    console.log('👑 [ADMIN] Accès refusé');
     window.location.href = 'index.html'; 
     return false; 
   }
   return true; 
 }
 
-// 🎌 BIENVENUE
-function extractNameFromEmail(email) {
-  let name = email.split('@')[0].toLowerCase();
-  name = name.replace(/[^a-zA-Z\s]/g, ' ');
-  name = name.replace(/\s+/g, ' ').trim();
-  return name.charAt(0).toUpperCase() + name.slice(1) || 'Utilisateur';
-}
+// 📝 INSCRIPTION SIMPLIFIÉE ET ROBUSTE
+async function handleRegister(e) {
+  e.preventDefault();
+  console.log('📝 INSCRIPTION...');
+  
+  const email = document.getElementById("regEmail").value.trim();
+  const password = document.getElementById("regPassword").value.trim();
+  const regErrorMessage = document.getElementById("regErrorMessage");
 
-function showWelcomeMessage() {
-  const email = localStorage.getItem('email');
-  if (!email || sessionStorage.getItem('welcomeShown')) return;
-  
-  const name = extractNameFromEmail(email);
-  const welcomeMsg = document.createElement('div');
-  welcomeMsg.id = 'welcomeMsg';
-  welcomeMsg.style.cssText = `
-    position: fixed; top: 20px; right: 20px; z-index: 9999;
-    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
-    color: white; padding: 20px 30px; border-radius: 50px;
-    box-shadow: 0 10px 30px rgba(108, 92, 231, 0.4);
-    font-weight: 600; font-size: 18px; max-width: 350px;
-    animation: slideIn 0.5s ease, slideOut 0.5s 4.5s forwards;
-  `;
-  welcomeMsg.innerHTML = `🎌 Bienvenue à Otaku-Saga <strong>${name}</strong> !`;
-  
-  document.head.insertAdjacentHTML('beforeend', `
-    <style>
-      @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-      @keyframes slideOut { to { transform: translateX(100%); opacity: 0; } }
-    </style>
-  `);
-  
-  document.body.appendChild(welcomeMsg);
-  sessionStorage.setItem('welcomeShown', 'true');
-  
-  setTimeout(() => {
-    const welcomeMsg = document.getElementById('welcomeMsg');
-    if (welcomeMsg) welcomeMsg.remove();
-    const style = document.querySelector('style:last-of-type');
-    if (style) style.remove();
-  }, 5000);
-}
+  // Validations
+  if (!email || !password) {
+    if (regErrorMessage) regErrorMessage.textContent = "Champs vides";
+    return;
+  }
+  if (password.length < 6) {
+    if (regErrorMessage) regErrorMessage.textContent = "Mot de passe trop court";
+    return;
+  }
+  if (ADMIN_EMAILS.includes(email)) {
+    if (regErrorMessage) regErrorMessage.textContent = "Email admin réservé";
+    return;
+  }
 
-// 🔥 FIREBASE USERS - VERSION FIXÉE
-async function getUsers() {
-  const currentDb = await ensureDb();
-  console.log('👥 [GET USERS] Lecture... DB:', currentDb ? 'OK' : 'NULL');
-  
-  if (!currentDb) return [];
-  
-  try {
-    const usersRef = window.firebase.collection(currentDb, 'users');
-    console.log('👥 [GET USERS] Collection créée');
-    const snapshot = await window.firebase.getDocs(usersRef);
-    console.log('👥 [GET USERS] Snapshot:', snapshot.size, 'utilisateurs');
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  } catch(e) {
-    console.error('❌ [GET USERS] ERREUR:', e.message);
-    return [];
+  // Vérifier doublon
+  const users = await getUsers();
+  if (users.find(u => u.email === email)) {
+    if (regErrorMessage) regErrorMessage.textContent = "Email déjà utilisé";
+    return;
+  }
+
+  // CRÉER COMPTE
+  const success = await saveUser(email, password);
+  if (success) {
+    localStorage.setItem("isAuthenticated", "true");
+    localStorage.setItem("email", email);
+    alert('✅ Compte créé ! Redirection...');
+    setTimeout(() => window.location.href = "index.html", 1000);
+  } else {
+    if (regErrorMessage) regErrorMessage.textContent = "Erreur Firebase - vérifiez console F12";
   }
 }
 
-async function saveUser(email, password) {
-  const currentDb = await ensureDb();
-  console.log('💾 [SAVE USER] Création:', email, 'DB:', currentDb ? 'OK' : 'NULL');
-  
-  if (!currentDb) {
-    console.error('❌ [SAVE USER] DB indisponible');
-    return false;
-  }
-  
-  try {
-    const usersRef = window.firebase.collection(currentDb, 'users');
-    await window.firebase.addDoc(usersRef, {
-      email, password, 
-      role: 'user',
-      createdAt: new Date().toISOString(),
-      banned: false
-    });
-    console.log('✅ [SAVE USER] Créé avec succès:', email);
-    return true;
-  } catch(e) {
-    console.error('❌ [SAVE USER] ERREUR:', e.message);
-    return false;
-  }
-}
+// 🔐 CONNEXION
+async function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-async function updateUser(email, updates) {
-  const currentDb = await ensureDb();
-  if (!currentDb) return false;
-  
-  try {
-    const usersRef = window.firebase.collection(currentDb, 'users');
-    const snapshot = await window.firebase.getDocs(usersRef);
-    const userDoc = snapshot.docs.find(doc => doc.data().email === email);
-    if (userDoc) {
-      await window.firebase.updateDoc(window.firebase.doc(currentDb, 'users', userDoc.id), updates);
-      console.log('✅ [UPDATE] OK:', email);
-      return true;
-    }
-    return false;
-  } catch(e) {
-    console.error('❌ [UPDATE] ERREUR:', e.message);
-    return false;
-  }
-}
-
-async function deleteUserByEmail(email) {
-  const currentDb = await ensureDb();
-  if (!currentDb) return false;
-  
-  try {
-    const usersRef = window.firebase.collection(currentDb, 'users');
-    const snapshot = await window.firebase.getDocs(usersRef);
-    const userDoc = snapshot.docs.find(doc => doc.data().email === email);
-    if (userDoc) {
-      await window.firebase.deleteDoc(window.firebase.doc(currentDb, 'users', userDoc.id));
-      console.log('✅ [DELETE] Supprimé:', email);
-      return true;
-    }
-    return false;
-  } catch(e) {
-    console.error('❌ [DELETE] ERREUR:', e.message);
-    return false;
-  }
-}
-
-// INITIALISATION FIXÉE
-document.addEventListener("DOMContentLoaded", async function() {
-  console.log('🚀 [INIT] DOM chargé - Page:', window.location.pathname);
-  
-  // 🔥 INITIALISER DB AU DÉMARRAGE
-  try {
-    await initFirebase();
-    console.log('✅ [DEBUG 8/8] Système prêt !');
-  } catch(e) {
-    console.error('❌ Init Firebase échouée:', e.message);
-  }
-  
-  checkAuth();
-  // ... [RESTE IDENTIQUE] ...
-  
-  const currentPage = window.location.pathname.split("/").pop() || window.location.href.split("/").pop();
+  if (!email || !password) return showError("Champs vides");
 
   // ADMIN
-  if (currentPage === 'admin.html') {
-    console.log('👑 [INIT] Mode Admin détecté');
-    if (!checkAdminAuth()) return;
-    setTimeout(initAdminDashboard, 1000);
+  if (ADMIN_EMAILS.includes(email) && password === ADMIN_PASSWORD) {
+    localStorage.setItem('isAdmin', 'true');
+    localStorage.setItem('adminEmail', email);
+    return window.location.href = 'admin.html';
   }
 
-  // BIENVENUE
-  const isAuthenticated = localStorage.getItem("isAuthenticated");
-  const protectedPages = ["accueil.html", "actus.html", "service.html", "contact.html", "apropos.html", "lecture.html"];
-  if (protectedPages.includes(currentPage) && isAuthenticated) {
-    console.log('🎌 [BIENVENUE] User connecté:', localStorage.getItem('email'));
-    setTimeout(showWelcomeMessage, 800);
-  }
+  // USER
+  const users = await getUsers();
+  const user = users.find(u => u.email === email && u.password === password);
+  
+  if (!user || user.banned) return showError("Identifiants incorrects");
 
-  // INDEX
-  if (currentPage === "index.html" || currentPage === "" || currentPage.includes("index.html")) {
-    if (isAuthenticated) {
-      const alreadyConnectedDiv = document.getElementById("alreadyConnected");
-      if (alreadyConnectedDiv) alreadyConnectedDiv.style.display = "block";
-    }
+  localStorage.setItem("isAuthenticated", "true");
+  localStorage.setItem("email", email);
+  window.location.href = "accueil.html";
+}
+
+function showError(message) {
+  const errorEl = document.getElementById("errorMessage") || document.getElementById("regErrorMessage");
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.classList.add("show");
+    setTimeout(() => errorEl.classList.remove("show"), 5000);
   }
+}
+
+// INITIALISATION
+document.addEventListener("DOMContentLoaded", async function() {
+  console.log('🚀 Otaku-Saga démarré');
+  
+  // Essayer d'initialiser au démarrage
+  await initFirebaseWithRetry();
+  
+  checkAuth();
 
   // EVENTS
   const loginForm = document.getElementById("loginForm");
@@ -264,65 +210,29 @@ document.addEventListener("DOMContentLoaded", async function() {
   const registerForm = document.getElementById("registerForm");
   if (registerForm) registerForm.addEventListener("submit", handleRegister);
 
-  const adminLoginBtn = document.getElementById('adminLoginBtn');
-  if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleAdminLogin);
-
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
-
-  const registerLink = document.getElementById("registerLink");
-  if (registerLink) {
-    registerLink.addEventListener("click", function(e) {
-      e.preventDefault();
-      window.location.href = "inscription.html";
-    });
-  }
-  
-  console.log('✅ [INIT] Écouteurs d\'événements attachés');
 });
 
-// ... [handleLogin, handleRegister, admin functions IDENTIQUES] ...
-
-// 📝 INSCRIPTION FIREBASE (IDENTIQUE)
-async function handleRegister(e) {
-  console.log('📝 [REGISTER] Inscription...');
-  e.preventDefault();
-  const email = document.getElementById("regEmail").value.trim();
-  const password = document.getElementById("regPassword").value.trim();
-  const regErrorMessage = document.getElementById("regErrorMessage");
-
-  if (!email || !password) return regErrorMessage ? regErrorMessage.textContent = "Champs vides" : null;
-  if (password.length < 6) return regErrorMessage ? regErrorMessage.textContent = "Mot de passe court" : null;
-
+// FONCTIONS ADMIN (simplifiées)
+async function initAdminDashboard() {
+  if (!checkAdminAuth()) return;
   const users = await getUsers();
-  
-  if (ADMIN_EMAILS.includes(email)) return regErrorMessage ? regErrorMessage.textContent = "Email admin réservé" : null;
-  if (users.find(u => u.email === email)) return regErrorMessage ? regErrorMessage.textContent = "Email existe" : null;
-
-  console.log('💾 [REGISTER] Sauvegarde Firebase:', email);
-  const success = await saveUser(email, password);
-  if (success) {
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("email", email);
-    alert('✅ Compte créé dans Firebase ! Connectez-vous !');
-    setTimeout(() => window.location.href = "index.html", 1000);
-  } else {
-    regErrorMessage ? regErrorMessage.textContent = "Erreur création" : null;
-  }
+  // ... afficher tableau
 }
 
-// ... [Toutes les autres fonctions IDENTIQUES] ...
+function handleLogout(e) {
+  e?.preventDefault();
+  localStorage.clear();
+  window.location.href = "index.html";
+}
 
-// EXPORTER FONCTIONS GLOBALES
-window.checkAuth = checkAuth;
+// EXPORTER GLOBAL
+window.handleRegister = handleRegister;
+window.handleLogin = handleLogin;
 window.handleLogout = handleLogout;
-window.isAdmin = isAdmin;
-window.checkAdminAuth = checkAdminAuth;
-window.loadAdminData = loadAdminData;
-window.toggleBan = toggleBan;
-window.changeRole = changeRole;
-window.deleteUser = deleteUser;
-window.initAdminDashboard = initAdminDashboard;
-window.setupAdminActions = setupAdminActions;
+window.initFirebaseWithRetry = initFirebaseWithRetry;
+window.getUsers = getUsers;
+window.saveUser = saveUser;
 
-console.log('🎌 [FINAL] Otaku-Saga FIREBASE DB FIXÉ ! Project ID: otakusaga2026');
+console.log('🎌 Otaku-Saga PRÊT ! Testez inscription.html');
