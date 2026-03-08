@@ -187,7 +187,7 @@ async function handleLogin(e) {
   const users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
   const user = users.find(u => u.email === email && u.password === password);
   
-  if (!user || user.banned) return showError("❌ Identifiants incorrects");
+  if (!user || user.banned) return showError("❌ Identifiants ou Mot de passe incorrects veuillez d'abord vous Inscrire");
 
   localStorage.setItem("isAuthenticated", "true");
   localStorage.setItem("email", email);
@@ -204,7 +204,7 @@ async function handleAdminLogin() {
     localStorage.setItem('adminEmail', email);
     window.location.href = 'admin.html';
   } else {
-    showError("❌ Admin refusé");
+    showError("❌ Accès Admin refusé");
   }
 }
 
@@ -234,7 +234,7 @@ async function handleRegister(e) {
   localStorage.setItem("email", email);
   sessionStorage.removeItem('welcomeShown');
   
-  alert('✅ Compte créé ! Visible partout !');
+  alert('✅ Compte créé ! Visible partout ! Connectez-vous !');
   setTimeout(() => window.location.href = "index.html", 1000);
 }
 
