@@ -1,8 +1,30 @@
 // =====================================================
-// APP.JS FINAL - OTaku-SAGA MULTI-NAVEIGATEURS 100% 
+// APP.JS FINAL - OTaku-SAGA FIREBASE MULTI-NAVEIGATEURS
 // =====================================================
 
-// 🔐 VÉRIFICATION AUTHENTIFICATION
+// 🔥 VOTRE CONFIG FIREBASE (INTÉGRÉE)
+const firebaseConfig = {
+  apiKey: "AIzaSyCtFJqHUu-YPS-q6oDq2bys3YlwLnetKoE",
+  authDomain: "otakusaga2026.firebaseapp.com",
+  projectId: "otakusaga2026",
+  storageBucket: "otakusaga2026.firebasestorage.app",
+  messagingSenderId: "404046034826",
+  appId: "1:404046034826:web:500d245326be9e18033a73"
+};
+
+// 🔥 INITIALISER FIREBASE + FIRESTORE (CDN Compat)
+let db;
+try {
+  const { initializeApp } = window.firebase;
+  const { getFirestore } = window.firebase;
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  console.log('🔥 Firebase OtakuSaga2026 connecté !');
+} catch(e) {
+  console.error('Firebase erreur:', e);
+}
+
+// 🔐 VÉRIFICATION AUTH
 function checkAuth() {
   const isAuthenticated = localStorage.getItem("isAuthenticated");
   const currentPage = window.location.pathname.split("/").pop() || window.location.href.split("/").pop();
@@ -15,22 +37,20 @@ function checkAuth() {
   return true;
 }
 
-// 👑 ADMIN SECRETS
+// 👑 ADMIN
 const ADMIN_EMAILS = ['admin@otaku.com', 'admin@saga.com'];
 const ADMIN_PASSWORD = 'OtakuSaga2026!';
-
-// Vérifier admin
 function isAdmin() { return localStorage.getItem('isAdmin') === 'true'; }
 function checkAdminAuth() { 
   if (!isAdmin()) { window.location.href = 'index.html'; return false; }
   return true; 
 }
 
-// 🎌 MESSAGE BIENVENUE
+// 🎌 BIENVENUE
 function extractNameFromEmail(email) {
   let name = email.split('@')[0].toLowerCase();
-  name = name.replace(/[^a-zA-Z\s]/g, ' ');  // ✅ CORRIGÉ
-  name = name.replace(/\s+/g, ' ').trim();   // ✅ CORRIGÉ
+  name = name.replace(/[^a-zA-Z\s]/g, ' ');
+  name = name.replace(/\s+/g, ' ').trim();
   return name.charAt(0).toUpperCase() + name.slice(1) || 'Utilisateur';
 }
 
@@ -69,63 +89,80 @@ function showWelcomeMessage() {
   }, 5000);
 }
 
-// 🌍 MULTI-NAVEIGATEURS - CLÉ GLOBALE
-const GLOBAL_USERS_KEY = 'OtakuSaga_ALL_USERS_2026_v2';
-
-// 🔄 ÉVÉNEMENT STORAGE (MULTI-ONGL ETS)
-window.addEventListener('storage', function(e) {
-  if (e.key === GLOBAL_USERS_KEY && window.location.pathname.includes('admin.html')) {
-    console.log('🔄 NOUVEAU utilisateur détecté via storage event');
-    if (typeof loadAdminData === 'function') loadAdminData();
-  }
-});
-
-// 🔄 SYNCHRO FORCÉE (toutes les 3s + déclenchement manuel)
-function forceGlobalSync() {
+// 🔥 FIREBASE USERS
+async function getUsers() {
+  if (!db) return [];
   try {
-    let globalUsers = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
-    let localUsers = JSON.parse(localStorage.getItem('otakuSagaUsers') || '[]');
-    
-    // FUSIONNER (évite doublons)
-    localUsers.forEach(user => {
-      if (!globalUsers.find(u => u.email === user.email)) {
-        globalUsers.push({
-          ...user, 
-          syncedFrom: navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Other',
-          syncedAt: new Date().toISOString()
-        });
-      }
-    });
-    
-    // BROADCAST GLOBAL (déclenche storage event)
-    localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(globalUsers));
-    localStorage.setItem('otakuSagaUsers', JSON.stringify(globalUsers));
-    
-    console.log('🔄 GLOBAL SYNC:', globalUsers.length, 'utilisateurs');
-    return globalUsers;
+    const usersRef = window.firebase.collection(db, 'users');
+    const snapshot = await window.firebase.getDocs(usersRef);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch(e) {
-    console.error('Sync error:', e);
+    console.error('Firebase users error:', e);
     return [];
   }
 }
 
-// SYNCHRO AUTO
-setInterval(forceGlobalSync, 3000);
+async function saveUser(email, password) {
+  if (!db) return false;
+  try {
+    const usersRef = window.firebase.collection(db, 'users');
+    await window.firebase.addDoc(usersRef, {
+      email, password, 
+      role: 'user',
+      createdAt: new Date().toISOString(),
+      banned: false
+    });
+    return true;
+  } catch(e) {
+    console.error('Save user error:', e);
+    return false;
+  }
+}
+
+async function updateUser(email, updates) {
+  if (!db) return false;
+  try {
+    const usersRef = window.firebase.collection(db, 'users');
+    const snapshot = await window.firebase.getDocs(usersRef);
+    const userDoc = snapshot.docs.find(doc => doc.data().email === email);
+    if (userDoc) {
+      await window.firebase.updateDoc(window.firebase.doc(db, 'users', userDoc.id), updates);
+      return true;
+    }
+    return false;
+  } catch(e) {
+    console.error('Update user error:', e);
+    return false;
+  }
+}
+
+async function deleteUserByEmail(email) {
+  if (!db) return false;
+  try {
+    const usersRef = window.firebase.collection(db, 'users');
+    const snapshot = await window.firebase.getDocs(usersRef);
+    const userDoc = snapshot.docs.find(doc => doc.data().email === email);
+    if (userDoc) {
+      await window.firebase.deleteDoc(window.firebase.doc(db, 'users', userDoc.id));
+      return true;
+    }
+    return false;
+  } catch(e) {
+    console.error('Delete user error:', e);
+    return false;
+  }
+}
 
 // INITIALISATION
 document.addEventListener("DOMContentLoaded", async function() {
-  forceGlobalSync(); // Sync immédiat
-  
-  await checkAuth();
+  checkAuth();
 
   const currentPage = window.location.pathname.split("/").pop() || window.location.href.split("/").pop();
 
   // ADMIN
   if (currentPage === 'admin.html') {
     if (!checkAdminAuth()) return;
-    setTimeout(() => {
-      initAdminDashboard();
-    }, 500);
+    setTimeout(initAdminDashboard, 1000);
   }
 
   // BIENVENUE
@@ -135,7 +172,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     setTimeout(showWelcomeMessage, 800);
   }
 
-  // INDEX - Déjà connecté
+  // INDEX
   if (currentPage === "index.html" || currentPage === "" || currentPage.includes("index.html")) {
     if (isAuthenticated) {
       const alreadyConnectedDiv = document.getElementById("alreadyConnected");
@@ -165,7 +202,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 });
 
-// 🔐 CONNEXION
+// 🔐 CONNEXION FIREBASE
 async function handleLogin(e) {
   e.preventDefault();
   const email = document.getElementById("email").value.trim();
@@ -182,12 +219,11 @@ async function handleLogin(e) {
     return window.location.href = 'admin.html';
   }
 
-  // USER GLOBAL
-  forceGlobalSync();
-  const users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
+  // USER FIREBASE
+  const users = await getUsers();
   const user = users.find(u => u.email === email && u.password === password);
   
-  if (!user || user.banned) return showError("❌ Identifiants ou Mot de passe incorrects veuillez d'abord vous Inscrire");
+  if (!user || user.banned) return showError("❌ Identifiants incorrects");
 
   localStorage.setItem("isAuthenticated", "true");
   localStorage.setItem("email", email);
@@ -204,11 +240,11 @@ async function handleAdminLogin() {
     localStorage.setItem('adminEmail', email);
     window.location.href = 'admin.html';
   } else {
-    showError("❌ Accès Admin refusé");
+    showError("❌ Admin refusé");
   }
 }
 
-// 📝 INSCRIPTION GLOBALE
+// 📝 INSCRIPTION FIREBASE
 async function handleRegister(e) {
   e.preventDefault();
   const email = document.getElementById("regEmail").value.trim();
@@ -218,36 +254,30 @@ async function handleRegister(e) {
   if (!email || !password) return regErrorMessage ? regErrorMessage.textContent = "Champs vides" : null;
   if (password.length < 6) return regErrorMessage ? regErrorMessage.textContent = "Mot de passe court" : null;
 
-  forceGlobalSync();
-  const users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
+  const users = await getUsers();
   
   if (ADMIN_EMAILS.includes(email)) return regErrorMessage ? regErrorMessage.textContent = "Email admin réservé" : null;
   if (users.find(u => u.email === email)) return regErrorMessage ? regErrorMessage.textContent = "Email existe" : null;
 
-  const newUser = { email, password, role: 'user', createdAt: new Date().toISOString(), banned: false };
-  users.push(newUser);
-  
-  localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(users));
-  localStorage.setItem('otakuSagaUsers', JSON.stringify(users));
-
-  localStorage.setItem("isAuthenticated", "true");
-  localStorage.setItem("email", email);
-  sessionStorage.removeItem('welcomeShown');
-  
-  alert('✅ Compte créé ! Visible partout ! Connectez-vous !');
-  setTimeout(() => window.location.href = "index.html", 1000);
+  const success = await saveUser(email, password);
+  if (success) {
+    localStorage.setItem("isAuthenticated", "true");
+    localStorage.setItem("email", email);
+    alert('✅ Compte créé dans Firebase ! Connectez-vous !');
+    setTimeout(() => window.location.href = "index.html", 1000);
+  } else {
+    regErrorMessage ? regErrorMessage.textContent = "Erreur création" : null;
+  }
 }
 
-// 👑 ADMIN DASHBOARD
+// 👑 ADMIN FIREBASE
 async function initAdminDashboard() {
-  forceGlobalSync();
   loadAdminData();
   setupAdminActions();
 }
 
 async function loadAdminData() {
-  forceGlobalSync();
-  const users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
+  const users = await getUsers();
   const stats = {
     totalUsers: users.length,
     activeUsers: users.filter(u => localStorage.getItem('email') === u.email).length,
@@ -287,10 +317,39 @@ function displayUsersList(users) {
   `).join('');
 }
 
+async function toggleBan(email) {
+  const users = await getUsers();
+  const user = users.find(u => u.email === email);
+  if (user) {
+    await updateUser(email, { banned: !user.banned });
+    loadAdminData();
+    alert(user.banned ? '✅ Débanni !' : '👮 Banni !');
+  }
+}
+
+async function changeRole(email) {
+  const newRole = prompt('Nouveau rôle (user/moderator):', 'user');
+  if (newRole) {
+    await updateUser(email, { role: newRole.toLowerCase() });
+    loadAdminData();
+  }
+}
+
+async function deleteUser(email) {
+  if (confirm('Supprimer définitivement ?')) {
+    await deleteUserByEmail(email);
+    loadAdminData();
+  }
+}
+
 function setupAdminActions() {
   const searchInput = document.getElementById('searchUser');
   if (searchInput) {
-    searchInput.addEventListener('input', function() { filterUsers(this.value); });
+    searchInput.addEventListener('input', async function() {
+      const users = await getUsers();
+      const filtered = users.filter(u => u.email.toLowerCase().includes(this.value.toLowerCase()));
+      displayUsersList(filtered);
+    });
   }
   
   const adminLogout = document.getElementById('adminLogout');
@@ -301,47 +360,6 @@ function setupAdminActions() {
       window.location.href = 'index.html';
     });
   }
-}
-
-async function toggleBan(email) {
-  forceGlobalSync();
-  let users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
-  const userIndex = users.findIndex(u => u.email === email);
-  if (userIndex !== -1) {
-    users[userIndex].banned = !users[userIndex].banned;
-    localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(users));
-    loadAdminData();
-    alert(users[userIndex].banned ? '👮 Banni !' : '✅ Débanni !');
-  }
-}
-
-async function changeRole(email) {
-  forceGlobalSync();
-  let users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
-  const userIndex = users.findIndex(u => u.email === email);
-  const newRole = prompt('Nouveau rôle (user/moderator):', users[userIndex]?.role || 'user');
-  if (userIndex !== -1 && newRole) {
-    users[userIndex].role = newRole.toLowerCase();
-    localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(users));
-    loadAdminData();
-  }
-}
-
-async function deleteUser(email) {
-  if (confirm('Supprimer définitivement ?')) {
-    forceGlobalSync();
-    let users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
-    users = users.filter(u => u.email !== email);
-    localStorage.setItem(GLOBAL_USERS_KEY, JSON.stringify(users));
-    loadAdminData();
-  }
-}
-
-async function filterUsers(query) {
-  forceGlobalSync();
-  const users = JSON.parse(localStorage.getItem(GLOBAL_USERS_KEY) || '[]');
-  const filtered = users.filter(u => u.email.toLowerCase().includes(query.toLowerCase()));
-  displayUsersList(filtered);
 }
 
 function handleLogout(e) {
@@ -363,7 +381,7 @@ function showError(message) {
   }
 }
 
-// 🌍 EXPORTER FONCTIONS GLOBALES
+// EXPORTER FONCTIONS GLOBALES
 window.checkAuth = checkAuth;
 window.handleLogout = handleLogout;
 window.isAdmin = isAdmin;
@@ -372,9 +390,6 @@ window.loadAdminData = loadAdminData;
 window.toggleBan = toggleBan;
 window.changeRole = changeRole;
 window.deleteUser = deleteUser;
-window.filterUsers = filterUsers;
-window.forceGlobalSync = forceGlobalSync;
 
 // 🚀 DÉMARRAGE
-forceGlobalSync();
-console.log('🎌 Otaku-Saga MULTI-NAVEIGATEURS chargé !');
+console.log('🎌 Otaku-Saga FIREBASE prêt ! Project ID: otakusaga2026');
