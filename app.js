@@ -1,7 +1,7 @@
 // =====================================================
 // 🔥 APP.JS MASTER - OTaku-SAGA 2026 (COEUR CENTRAL)
 // =====================================================
-// Version: 2.0 - Maintenance garantie index.html ↔ inscription.html ↔ admin.html
+// Version: 2.1 - Auto-fill SUPPRIMÉ + Admin FONCTIONS COMPLÈTES
 
 // 🔥 CONFIG FIREBASE OFFICIELLE
 const firebaseConfig = {
@@ -36,7 +36,6 @@ async function initFirebase() {
   if (STATE.isInitialized) return true;
   
   try {
-    // Compat CDN (v9.23.0)
     const { initializeApp } = window.firebase;
     const { getFirestore } = window.firebase;
     
@@ -46,7 +45,6 @@ async function initFirebase() {
     STATE.isInitialized = true;
     console.log('✅ Firebase OtakuSaga2026 CONNECTÉ - PID: otakusaga2026');
     
-    // Sync users au démarrage
     await syncUsersCache();
     return true;
   } catch(e) {
@@ -61,7 +59,6 @@ async function initFirebase() {
 async function authenticateUser(email, password, isAdminAttempt = false) {
   console.log(`🔐 AUTH ${isAdminAttempt ? 'ADMIN' : 'USER'}:`, email);
   
-  // ADMIN PRIORITAIRE
   if (ADMIN_CREDENTIALS.emails.includes(email) && password === ADMIN_CREDENTIALS.password) {
     localStorage.setItem('isAdmin', 'true');
     localStorage.setItem('adminEmail', email);
@@ -76,7 +73,6 @@ async function authenticateUser(email, password, isAdminAttempt = false) {
     return { success: true, role: 'admin' };
   }
   
-  // USER (Firebase + localStorage sync)
   try {
     const users = await getUsers();
     const user = users.find(u => u.email === email && u.password === password && !u.banned);
@@ -84,7 +80,7 @@ async function authenticateUser(email, password, isAdminAttempt = false) {
     if (user) {
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('email', email);
-      localStorage.removeItem('isAdmin'); // User normal
+      localStorage.removeItem('isAdmin');
       
       STATE.currentUser = user;
       STATE.isAdmin = false;
@@ -101,12 +97,11 @@ async function authenticateUser(email, password, isAdminAttempt = false) {
 }
 
 // =====================================================
-// 🔥 3. INSCRIPTION SYNCHRONISÉE (inscription.html → index.html)
+// 🔥 3. INSCRIPTION SYNCHRONISÉE
 // =====================================================
 async function registerUser(email, password) {
   console.log('📝 INSCRIPTION:', email);
   
-  // VALIDATIONS STRICTES
   if (!email || !password || password.length < 6 || !email.includes('@')) {
     return { success: false, error: 'Données invalides' };
   }
@@ -116,16 +111,13 @@ async function registerUser(email, password) {
   }
   
   try {
-    // Vérif doublon
     const users = await getUsers();
     if (users.find(u => u.email === email)) {
       return { success: false, error: 'Email déjà utilisé' };
     }
     
-    // 🔥 SAUVEGARDE FIREBASE + localStorage
     const success = await saveUser(email, password);
     if (success) {
-      // CONNEXION AUTO + REDIRECTION
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('email', email);
       
@@ -191,25 +183,18 @@ async function saveUser(email, password) {
 }
 
 // =====================================================
-// 🔥 5. CORE MASTER - DOMContentLoaded UNIQUE
+// 🔥 5. CORE MASTER - DOMContentLoaded
 // =====================================================
 document.addEventListener('DOMContentLoaded', async function() {
   console.log('🚀 Otaku-Saga MASTER chargé - DEBUG ACTIF');
   
-  // 🔥 INIT FIREBASE
   await initFirebase();
-  
-  // 🔍 DÉTECTER PAGE COURANTE
   const currentPage = getCurrentPage();
   console.log('📍 Page:', currentPage);
   
-  // 🔐 CHECK AUTH + UI
   await handlePageAuth(currentPage);
-  
-  // 🎌 ATTACH EVENTS UNIFIÉS
   attachUnifiedEvents();
   
-  // 👑 ADMIN DASHBOARD
   if (currentPage === 'admin.html') {
     await initAdminDashboard();
   }
@@ -218,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 // =====================================================
-// 🔥 6. DÉTECTION + ROUTING INTELLIGENT
+// 🔥 6. DÉTECTION + ROUTING
 // =====================================================
 function getCurrentPage() {
   return window.location.pathname.split("/").pop().split("?")[0] || 
@@ -230,7 +215,6 @@ async function handlePageAuth(page) {
   const isAuth = localStorage.getItem('isAuthenticated') === 'true';
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
   
-  // PROTÉGÉES
   const protectedPages = ['accueil.html', 'actus.html', 'service.html', 'contact.html', 'apropos.html', 'lecture.html'];
   
   if (protectedPages.includes(page) && !isAuth) {
@@ -239,7 +223,6 @@ async function handlePageAuth(page) {
     return;
   }
   
-  // ADMIN
   if (page === 'admin.html' && !isAdmin) {
     console.log('👑 Non-admin → index.html');
     localStorage.removeItem('isAdmin');
@@ -247,7 +230,6 @@ async function handlePageAuth(page) {
     return;
   }
   
-  // INDEX: alreadyConnected
   if (page === 'index.html' && isAuth) {
     const alreadyConnected = document.getElementById('alreadyConnected');
     if (alreadyConnected) {
@@ -258,28 +240,18 @@ async function handlePageAuth(page) {
 }
 
 // =====================================================
-// 🔥 7. EVENTS UNIFIÉS (TOUS PAGES)
+// 🔥 7. EVENTS UNIFIÉS
 // =====================================================
 function attachUnifiedEvents() {
-  // INDEX: loginForm
   const loginForm = document.getElementById('loginForm');
-  if (loginForm) {
-    loginForm.addEventListener('submit', handleLoginForm);
-  }
-  
-  // INSCRIPTION: registerForm  
+  if (loginForm) loginForm.addEventListener('submit', handleLoginForm);
+
   const registerForm = document.getElementById('registerForm');
-  if (registerForm) {
-    registerForm.addEventListener('submit', handleRegisterForm);
-  }
-  
-  // INDEX: adminLoginBtn
+  if (registerForm) registerForm.addEventListener('submit', handleRegisterForm);
+
   const adminBtn = document.getElementById('adminLoginBtn');
-  if (adminBtn) {
-    adminBtn.addEventListener('click', handleAdminQuickLogin);
-  }
-  
-  // LINKS: registerLink
+  if (adminBtn) adminBtn.addEventListener('click', handleAdminQuickLogin);
+
   const registerLink = document.getElementById('registerLink');
   if (registerLink) {
     registerLink.addEventListener('click', (e) => {
@@ -287,16 +259,13 @@ function attachUnifiedEvents() {
       window.location.href = 'inscription.html';
     });
   }
-  
-  // LOGOUT global
+
   const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', handleLogout);
-  }
+  if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
 }
 
 // =====================================================
-// 🔥 8. HANDLERS FORMULAIRES OPTIMISÉS
+// 🔥 8. HANDLERS FORMULAIRES
 // =====================================================
 async function handleLoginForm(e) {
   e.preventDefault();
@@ -317,7 +286,6 @@ async function handleRegisterForm(e) {
   const result = await registerUser(email, password);
   
   if (result.success) {
-    // UI Succès + Redirection
     const submitBtn = document.getElementById('submitBtn');
     const successMsg = document.getElementById('regSuccessMessage');
     
@@ -334,10 +302,24 @@ async function handleRegisterForm(e) {
   }
 }
 
+// ✅ AUTO-FILL SUPPRIMÉ - Instructions manuelles
 async function handleAdminQuickLogin() {
-  document.getElementById('email').value = ADMIN_CREDENTIALS.emails[0];
-  document.getElementById('password').value = ADMIN_CREDENTIALS.password;
-  document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+  console.log('👑 ADMIN BUTTON - Instructions affichées');
+  
+  const errorMsg = document.getElementById('errorMessage');
+  if (errorMsg) {
+    errorMsg.innerHTML = `
+      <strong>👑 PORTAIL ADMINISTRATEUR</strong><br><br>
+      📧 <strong>Email:</strong> <code>admin@otaku.com</code><br>
+      🔑 <strong>Mot de passe:</strong> <code>OtakuSaga2026!</code><br><br>
+      <small style="color: orange;">⚠️ Tapez MANUELLEMENT dans le formulaire ci-dessus</small>
+    `;
+    errorMsg.style.display = 'block';
+    errorMsg.style.background = 'rgba(255, 193, 7, 0.1)';
+    errorMsg.style.border = '1px solid rgba(255, 193, 7, 0.3)';
+    errorMsg.style.padding = '15px';
+    errorMsg.style.borderRadius = '8px';
+  }
 }
 
 // =====================================================
@@ -367,14 +349,104 @@ function calculateStats() {
   };
 }
 
+function updateStatsUI(stats) {
+  const totalEl = document.getElementById('totalUsers');
+  const activeEl = document.getElementById('activeUsers');
+  const bannedEl = document.getElementById('bannedUsers');
+  
+  if (totalEl) totalEl.textContent = stats.total;
+  if (activeEl) activeEl.textContent = stats.active;
+  if (bannedEl) bannedEl.textContent = stats.banned;
+}
+
+function displayUsersTable(users) {
+  const tbody = document.querySelector('#usersTable tbody');
+  if (!tbody) return;
+  
+  tbody.innerHTML = users.map((user, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${user.email}</td>
+      <td>${user.role || 'user'}</td>
+      <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-FR') : 'N/A'}</td>
+      <td style="color: ${user.banned ? 'red' : 'green'}">
+        ${user.banned ? '🚫 Banni' : '✅ Actif'}
+      </td>
+      <td>
+        <button onclick="window.toggleBan('${user.email}')" 
+                class="btn-small ${user.banned ? 'btn-success' : 'btn-danger'}">
+          ${user.banned ? 'Débanir' : 'Bannir'}
+        </button>
+        <button onclick="window.changeRole('${user.email}')" class="btn-small btn-warning">Rôle</button>
+        <button onclick="window.deleteUser('${user.email}')" class="btn-small btn-danger">Suppr</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function setupAdminListeners() {
+  const searchInput = document.getElementById('searchUser');
+  if (searchInput) {
+    searchInput.addEventListener('input', async function() {
+      const filtered = STATE.usersCache.filter(u => 
+        u.email.toLowerCase().includes(this.value.toLowerCase())
+      );
+      displayUsersTable(filtered);
+    });
+  }
+  
+  const adminLogout = document.getElementById('adminLogout');
+  if (adminLogout) {
+    adminLogout.addEventListener('click', handleLogout);
+  }
+}
+
 // =====================================================
-// 🔥 10. LOGOUT + CLEANUP
+// 🔥 10. ADMIN ACTIONS
+// =====================================================
+async function updateUser(email, updates) {
+  if (!db) return false;
+  try {
+    const usersRef = window.firebase.collection(db, 'users');
+    const snapshot = await window.firebase.getDocs(usersRef);
+    const userDoc = snapshot.docs.find(doc => doc.data().email === email);
+    if (userDoc) {
+      await window.firebase.updateDoc(window.firebase.doc(db, 'users', userDoc.id), updates);
+      await syncUsersCache();
+      return true;
+    }
+    return false;
+  } catch(e) {
+    console.error('updateUser error:', e);
+    return false;
+  }
+}
+
+async function deleteUserByEmail(email) {
+  if (!db) return false;
+  try {
+    const usersRef = window.firebase.collection(db, 'users');
+    const snapshot = await window.firebase.getDocs(usersRef);
+    const userDoc = snapshot.docs.find(doc => doc.data().email === email);
+    if (userDoc) {
+      await window.firebase.deleteDoc(window.firebase.doc(db, 'users', userDoc.id));
+      await syncUsersCache();
+      return true;
+    }
+    return false;
+  } catch(e) {
+    console.error('deleteUserByEmail error:', e);
+    return false;
+  }
+}
+
+// =====================================================
+// 🔥 11. LOGOUT + UTILITAIRES
 // =====================================================
 function handleLogout(e) {
   e?.preventDefault();
   if (!confirm('Déconnexion ?')) return;
   
-  // CLEAN TOTAL
   localStorage.clear();
   sessionStorage.clear();
   STATE = { isInitialized: true, currentUser: null, isAdmin: false, usersCache: [] };
@@ -382,9 +454,6 @@ function handleLogout(e) {
   window.location.replace('index.html');
 }
 
-// =====================================================
-// 🔥 11. UTILITAIRES + DEBUG
-// =====================================================
 function showError(message, targetId = 'errorMessage') {
   const el = document.getElementById(targetId) || document.getElementById('regErrorMessage');
   if (el) {
@@ -395,21 +464,34 @@ function showError(message, targetId = 'errorMessage') {
   console.error('❌', message);
 }
 
-// EXPORT GLOBALES ADMIN
+// =====================================================
+// 🔥 12. EXPORTS GLOBAUX ADMIN
+// =====================================================
 window.toggleBan = async (email) => {
   const user = STATE.usersCache.find(u => u.email === email);
   if (user) {
     await updateUser(email, { banned: !user.banned });
     await loadAdminData();
+    console.log('🔄 Ban togglé:', email);
+  }
+};
+
+window.changeRole = async (email) => {
+  const newRole = prompt('Nouveau rôle (user/moderator/admin):', 'user');
+  if (newRole && ['user', 'moderator', 'admin'].includes(newRole.toLowerCase())) {
+    await updateUser(email, { role: newRole.toLowerCase() });
+    await loadAdminData();
+    console.log('🔄 Rôle changé:', email, newRole);
   }
 };
 
 window.deleteUser = async (email) => {
-  if (confirm('Supprimer ?')) {
+  if (confirm('Supprimer définitivement cet utilisateur ?')) {
     await deleteUserByEmail(email);
     await loadAdminData();
+    console.log('🗑️ Utilisateur supprimé:', email);
   }
 };
 
-// FIN MASTER
-console.log('🎌 Otaku-Saga 2.0 MASTER CHARGÉ ✅');
+// FIN MASTER V2.1
+console.log('🎌 Otaku-Saga 2.1 MASTER ✅ - Auto-fill SUPPRIMÉ + Admin COMPLET');
