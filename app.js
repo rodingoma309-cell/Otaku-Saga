@@ -435,3 +435,15 @@ document.addEventListener('DOMContentLoaded', function() {
   
   console.log('🔥 FIX activé - 100ms polling');
 });
+// 🔥 FIX URGENT + DEBUG index.html
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🔥 DEBUG index.html chargé');
+  
+  // VÉRIFIER localStorage
+  const isAuth = localStorage.getItem('isAuthenticated');
+  const email = localStorage.getItem('email');
+  console.log('🔐 localStorage:', { isAuth, email });
+  
+  // FORCER alreadyConnected
+  const alreadyConnectedDiv
+
