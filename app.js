@@ -393,3 +393,45 @@ window.deleteUser = deleteUser;
 
 // 🚀 DÉMARRAGE
 console.log('🎌 Otaku-Saga FIREBASE prêt ! Project ID: otakusaga2026');
+// 🔥 FIX URGENT : FORCER Event Listener Inscription
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🔥 FIX - Attente form...');
+  
+  const waitForForm = setInterval(() => {
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+      console.log('✅ FORM TROUVÉ - Attachement event');
+      
+      // SUPPRIMER anciens listeners
+      registerForm.removeEventListener('submit', window.handleRegister);
+      
+      // NOUVEAU listener
+      registerForm.addEventListener('submit', async function(e) {
+        console.log('🚀 SUBMIT CLIC !');
+        e.preventDefault();
+        
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value.trim();
+        
+        console.log('📝 Inscription:', email);
+        
+        // FIREBASE SAVE
+        const success = await saveUser(email, password);
+        
+        if (success) {
+          console.log('✅ SUCCESS - REDIRECTION');
+          localStorage.setItem('isAuthenticated', 'true');
+          localStorage.setItem('email', email);
+          window.location.href = 'index.html';  // ← ICI !
+        } else {
+          console.log('❌ ÉCHEC saveUser');
+          document.getElementById('regErrorMessage').textContent = 'Erreur création';
+        }
+      });
+      
+      clearInterval(waitForForm);
+    }
+  }, 100);
+  
+  console.log('🔥 FIX activé - 100ms polling');
+});
