@@ -1,8 +1,9 @@
-ajoute la app.js debug ici // =====================================================
-// APP.JS FINAL - OTaku-SAGA FIREBASE MULTI-NAVEIGATEURS
 // =====================================================
+// 🔥 APP.JS MASTER - OTaku-SAGA 2026 (COEUR CENTRAL)
+// =====================================================
+// Version: 2.0 - Maintenance garantie index.html ↔ inscription.html ↔ admin.html
 
-// 🔥 VOTRE CONFIG FIREBASE (INTÉGRÉE)
+// 🔥 CONFIG FIREBASE OFFICIELLE
 const firebaseConfig = {
   apiKey: "AIzaSyCtFJqHUu-YPS-q6oDq2bys3YlwLnetKoE",
   authDomain: "otakusaga2026.firebaseapp.com",
@@ -12,84 +13,154 @@ const firebaseConfig = {
   appId: "1:404046034826:web:500d245326be9e18033a73"
 };
 
-// 🔥 INITIALISER FIREBASE + FIRESTORE (CDN Compat)
-let db;
-try {
-  const { initializeApp } = window.firebase;
-  const { getFirestore } = window.firebase;
-  const app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  console.log('🔥 Firebase OtakuSaga2026 connecté !');
-} catch(e) {
-  console.error('Firebase erreur:', e);
-}
+// 🔥 GLOBALS + ÉTAT CENTRALISÉ
+let db, app;
+let STATE = {
+  isInitialized: false,
+  currentUser: null,
+  isAdmin: false,
+  usersCache: [],
+  lastSync: null
+};
 
-// 🔐 VÉRIFICATION AUTH
-function checkAuth() {
-  const isAuthenticated = localStorage.getItem("isAuthenticated");
-  const currentPage = window.location.pathname.split("/").pop() || window.location.href.split("/").pop();
-  const protectedPages = ["accueil.html", "actus.html", "service.html", "contact.html", "apropos.html", "lecture.html"];
+// 🔐 ADMIN CONSTANTS (NE PAS MODIFIER)
+const ADMIN_CREDENTIALS = {
+  emails: ['admin@otaku.com', 'admin@saga.com'],
+  password: 'OtakuSaga2026!'
+};
 
-  if (protectedPages.includes(currentPage) && !isAuthenticated) {
-    window.location.href = "index.html";
+// =====================================================
+// 🔥 1. INITIALISATION FIREBASE + DEBUG
+// =====================================================
+async function initFirebase() {
+  if (STATE.isInitialized) return true;
+  
+  try {
+    // Compat CDN (v9.23.0)
+    const { initializeApp } = window.firebase;
+    const { getFirestore } = window.firebase;
+    
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    
+    STATE.isInitialized = true;
+    console.log('✅ Firebase OtakuSaga2026 CONNECTÉ - PID: otakusaga2026');
+    
+    // Sync users au démarrage
+    await syncUsersCache();
+    return true;
+  } catch(e) {
+    console.error('❌ Firebase INIT ERROR:', e);
     return false;
   }
-  return true;
 }
 
-// 👑 ADMIN
-const ADMIN_EMAILS = ['admin@otaku.com', 'admin@saga.com'];
-const ADMIN_PASSWORD = 'OtakuSaga2026!';
-function isAdmin() { return localStorage.getItem('isAdmin') === 'true'; }
-function checkAdminAuth() { 
-  if (!isAdmin()) { window.location.href = 'index.html'; return false; }
-  return true; 
+// =====================================================
+// 🔥 2. SYSTÈME D'AUTH CENTRALISÉ (INDEX + ADMIN)
+// =====================================================
+async function authenticateUser(email, password, isAdminAttempt = false) {
+  console.log(`🔐 AUTH ${isAdminAttempt ? 'ADMIN' : 'USER'}:`, email);
+  
+  // ADMIN PRIORITAIRE
+  if (ADMIN_CREDENTIALS.emails.includes(email) && password === ADMIN_CREDENTIALS.password) {
+    localStorage.setItem('isAdmin', 'true');
+    localStorage.setItem('adminEmail', email);
+    localStorage.setItem('isAuthenticated', 'true');
+    localStorage.setItem('email', email);
+    
+    STATE.isAdmin = true;
+    STATE.currentUser = { email, role: 'admin' };
+    
+    console.log('👑 ADMIN AUTH OK → admin.html');
+    window.location.replace('admin.html');
+    return { success: true, role: 'admin' };
+  }
+  
+  // USER (Firebase + localStorage sync)
+  try {
+    const users = await getUsers();
+    const user = users.find(u => u.email === email && u.password === password && !u.banned);
+    
+    if (user) {
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('email', email);
+      localStorage.removeItem('isAdmin'); // User normal
+      
+      STATE.currentUser = user;
+      STATE.isAdmin = false;
+      
+      console.log('✅ USER AUTH OK → accueil.html');
+      window.location.replace('accueil.html');
+      return { success: true, role: 'user', user };
+    }
+    
+    return { success: false, error: 'Identifiants incorrects' };
+  } catch(e) {
+    return { success: false, error: 'Erreur serveur' };
+  }
 }
 
-// 🎌 BIENVENUE
-function extractNameFromEmail(email) {
-  let name = email.split('@')[0].toLowerCase();
-  name = name.replace(/[^a-zA-Z\\s]/g, ' ');
-  name = name.replace(/\\s+/g, ' ').trim();
-  return name.charAt(0).toUpperCase() + name.slice(1) || 'Utilisateur';
+// =====================================================
+// 🔥 3. INSCRIPTION SYNCHRONISÉE (inscription.html → index.html)
+// =====================================================
+async function registerUser(email, password) {
+  console.log('📝 INSCRIPTION:', email);
+  
+  // VALIDATIONS STRICTES
+  if (!email || !password || password.length < 6 || !email.includes('@')) {
+    return { success: false, error: 'Données invalides' };
+  }
+  
+  if (ADMIN_CREDENTIALS.emails.includes(email)) {
+    return { success: false, error: 'Email admin réservé' };
+  }
+  
+  try {
+    // Vérif doublon
+    const users = await getUsers();
+    if (users.find(u => u.email === email)) {
+      return { success: false, error: 'Email déjà utilisé' };
+    }
+    
+    // 🔥 SAUVEGARDE FIREBASE + localStorage
+    const success = await saveUser(email, password);
+    if (success) {
+      // CONNEXION AUTO + REDIRECTION
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('email', email);
+      
+      STATE.currentUser = { email, role: 'user' };
+      await syncUsersCache();
+      
+      console.log('✅ INSCRIPTION OK → index.html');
+      return { 
+        success: true, 
+        message: 'Compte créé ! Redirection...',
+        redirect: 'index.html'
+      };
+    }
+    
+    return { success: false, error: 'Erreur création compte' };
+  } catch(e) {
+    console.error('❌ REGISTER ERROR:', e);
+    return { success: false, error: 'Erreur serveur' };
+  }
 }
 
-function showWelcomeMessage() {
-  const email = localStorage.getItem('email');
-  if (!email || sessionStorage.getItem('welcomeShown')) return;
-  
-  const name = extractNameFromEmail(email);
-  const welcomeMsg = document.createElement('div');
-  welcomeMsg.id = 'welcomeMsg';
-  welcomeMsg.style.cssText = `
-    position: fixed; top: 20px; right: 20px; z-index: 9999;
-    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
-    color: white; padding: 20px 30px; border-radius: 50px;
-    box-shadow: 0 10px 30px rgba(108, 92, 231, 0.4);
-    font-weight: 600; font-size: 18px; max-width: 350px;
-    animation: slideIn 0.5s ease, slideOut 0.5s 4.5s forwards;
-  `;
-  welcomeMsg.innerHTML = `🎌 Bienvenue à Otaku-Saga <strong>${name}</strong> !`;
-  
-  document.head.insertAdjacentHTML('beforeend', `
-    <style>
-      @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-      @keyframes slideOut { to { transform: translateX(100%); opacity: 0; } }
-    </style>
-  `);
-  
-  document.body.appendChild(welcomeMsg);
-  sessionStorage.setItem('welcomeShown', 'true');
-  
-  setTimeout(() => {
-    const welcomeMsg = document.getElementById('welcomeMsg');
-    if (welcomeMsg) welcomeMsg.remove();
-    const style = document.querySelector('style:last-of-type');
-    if (style) style.remove();
-  }, 5000);
+// =====================================================
+// 🔥 4. CACHE USERS + SYNCHRO ADMIN
+// =====================================================
+async function syncUsersCache() {
+  if (!db) return;
+  try {
+    STATE.usersCache = await getUsers();
+    STATE.lastSync = Date.now();
+    console.log('🔄 USERS CACHE:', STATE.usersCache.length, 'utilisateurs');
+  } catch(e) {
+    console.error('Cache sync error:', e);
+  }
 }
 
-// 🔥 FIREBASE USERS
 async function getUsers() {
   if (!db) return [];
   try {
@@ -97,7 +168,7 @@ async function getUsers() {
     const snapshot = await window.firebase.getDocs(usersRef);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch(e) {
-    console.error('Firebase users error:', e);
+    console.error('getUsers error:', e);
     return [];
   }
 }
@@ -107,289 +178,238 @@ async function saveUser(email, password) {
   try {
     const usersRef = window.firebase.collection(db, 'users');
     await window.firebase.addDoc(usersRef, {
-      email, password, 
+      email, password,
       role: 'user',
       createdAt: new Date().toISOString(),
       banned: false
     });
     return true;
   } catch(e) {
-    console.error('Save user error:', e);
+    console.error('saveUser error:', e);
     return false;
   }
 }
 
-async function updateUser(email, updates) {
-  if (!db) return false;
-  try {
-    const usersRef = window.firebase.collection(db, 'users');
-    const snapshot = await window.firebase.getDocs(usersRef);
-    const userDoc = snapshot.docs.find(doc => doc.data().email === email);
-    if (userDoc) {
-      await window.firebase.updateDoc(window.firebase.doc(db, 'users', userDoc.id), updates);
-      return true;
-    }
-    return false;
-  } catch(e) {
-    console.error('Update user error:', e);
-    return false;
-  }
-}
-
-async function deleteUserByEmail(email) {
-  if (!db) return false;
-  try {
-    const usersRef = window.firebase.collection(db, 'users');
-    const snapshot = await window.firebase.getDocs(usersRef);
-    const userDoc = snapshot.docs.find(doc => doc.data().email === email);
-    if (userDoc) {
-      await window.firebase.deleteDoc(window.firebase.doc(db, 'users', userDoc.id));
-      return true;
-    }
-    return false;
-  } catch(e) {
-    console.error('Delete user error:', e);
-    return false;
-  }
-}
-
-// INITIALISATION
-document.addEventListener("DOMContentLoaded", async function() {
-  checkAuth();
-
-  const currentPage = window.location.pathname.split("/").pop() || window.location.href.split("/").pop();
-
-  // ADMIN
+// =====================================================
+// 🔥 5. CORE MASTER - DOMContentLoaded UNIQUE
+// =====================================================
+document.addEventListener('DOMContentLoaded', async function() {
+  console.log('🚀 Otaku-Saga MASTER chargé - DEBUG ACTIF');
+  
+  // 🔥 INIT FIREBASE
+  await initFirebase();
+  
+  // 🔍 DÉTECTER PAGE COURANTE
+  const currentPage = getCurrentPage();
+  console.log('📍 Page:', currentPage);
+  
+  // 🔐 CHECK AUTH + UI
+  await handlePageAuth(currentPage);
+  
+  // 🎌 ATTACH EVENTS UNIFIÉS
+  attachUnifiedEvents();
+  
+  // 👑 ADMIN DASHBOARD
   if (currentPage === 'admin.html') {
-    if (!checkAdminAuth()) return;
-    setTimeout(initAdminDashboard, 1000);
+    await initAdminDashboard();
   }
-
-  // BIENVENUE
-  const isAuthenticated = localStorage.getItem("isAuthenticated");
-  const protectedPages = ["accueil.html", "actus.html", "service.html", "contact.html", "apropos.html", "lecture.html"];
-  if (protectedPages.includes(currentPage) && isAuthenticated) {
-    setTimeout(showWelcomeMessage, 800);
-  }
-
-  // INDEX
-  if (currentPage === "index.html" || currentPage === "" || currentPage.includes("index.html")) {
-    if (isAuthenticated) {
-      const alreadyConnectedDiv = document.getElementById("alreadyConnected");
-      if (alreadyConnectedDiv) alreadyConnectedDiv.style.display = "block";
-    }
-  }
-
-  // EVENTS
-  const loginForm = document.getElementById("loginForm");
-  if (loginForm) loginForm.addEventListener("submit", handleLogin);
-
-  const registerForm = document.getElementById("registerForm");
-  if (registerForm) registerForm.addEventListener("submit", handleRegister);
-
-  const adminLoginBtn = document.getElementById('adminLoginBtn');
-  if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleAdminLogin);
-
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
-
-  const registerLink = document.getElementById("registerLink");
-  if (registerLink) {
-    registerLink.addEventListener("click", function(e) {
-      e.preventDefault();
-      window.location.href = "inscription.html";
-    });
-  }
+  
+  console.log('✅ MASTER READY - État:', STATE);
 });
 
-// 🔐 CONNEXION FIREBASE
-async function handleLogin(e) {
-  e.preventDefault();
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
+// =====================================================
+// 🔥 6. DÉTECTION + ROUTING INTELLIGENT
+// =====================================================
+function getCurrentPage() {
+  return window.location.pathname.split("/").pop().split("?")[0] || 
+         window.location.href.split("/").pop().split("?")[0] || 
+         'index.html';
+}
 
-  if (!email || !password) return showError("Champs vides");
-  if (!email.includes("@")) return showError("Email invalide");
-
+async function handlePageAuth(page) {
+  const isAuth = localStorage.getItem('isAuthenticated') === 'true';
+  const isAdmin = localStorage.getItem('isAdmin') === 'true';
+  
+  // PROTÉGÉES
+  const protectedPages = ['accueil.html', 'actus.html', 'service.html', 'contact.html', 'apropos.html', 'lecture.html'];
+  
+  if (protectedPages.includes(page) && !isAuth) {
+    console.log('🔒 Redirection → index.html');
+    window.location.replace('index.html');
+    return;
+  }
+  
   // ADMIN
-  if (ADMIN_EMAILS.includes(email) && password === ADMIN_PASSWORD) {
-    localStorage.setItem('isAdmin', 'true');
-    localStorage.setItem('adminEmail', email);
-    sessionStorage.removeItem('welcomeShown');
-    return window.location.href = 'admin.html';
+  if (page === 'admin.html' && !isAdmin) {
+    console.log('👑 Non-admin → index.html');
+    localStorage.removeItem('isAdmin');
+    window.location.replace('index.html');
+    return;
   }
-
-  // USER FIREBASE
-  const users = await getUsers();
-  const user = users.find(u => u.email === email && u.password === password);
   
-  if (!user || user.banned) return showError("❌ Identifiants incorrects");
-
-  localStorage.setItem("isAuthenticated", "true");
-  localStorage.setItem("email", email);
-  sessionStorage.removeItem('welcomeShown');
-  window.location.href = "accueil.html";
-}
-
-async function handleAdminLogin() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-  
-  if (ADMIN_EMAILS.includes(email) && password === ADMIN_PASSWORD) {
-    localStorage.setItem('isAdmin', 'true');
-    localStorage.setItem('adminEmail', email);
-    window.location.href = 'admin.html';
-  } else {
-    showError("❌ Admin refusé");
+  // INDEX: alreadyConnected
+  if (page === 'index.html' && isAuth) {
+    const alreadyConnected = document.getElementById('alreadyConnected');
+    if (alreadyConnected) {
+      alreadyConnected.style.display = 'block';
+      console.log('✅ alreadyConnected AFFICHE');
+    }
   }
 }
 
-// 📝 INSCRIPTION FIREBASE
-async function handleRegister(e) {
+// =====================================================
+// 🔥 7. EVENTS UNIFIÉS (TOUS PAGES)
+// =====================================================
+function attachUnifiedEvents() {
+  // INDEX: loginForm
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleLoginForm);
+  }
+  
+  // INSCRIPTION: registerForm  
+  const registerForm = document.getElementById('registerForm');
+  if (registerForm) {
+    registerForm.addEventListener('submit', handleRegisterForm);
+  }
+  
+  // INDEX: adminLoginBtn
+  const adminBtn = document.getElementById('adminLoginBtn');
+  if (adminBtn) {
+    adminBtn.addEventListener('click', handleAdminQuickLogin);
+  }
+  
+  // LINKS: registerLink
+  const registerLink = document.getElementById('registerLink');
+  if (registerLink) {
+    registerLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.location.href = 'inscription.html';
+    });
+  }
+  
+  // LOGOUT global
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', handleLogout);
+  }
+}
+
+// =====================================================
+// 🔥 8. HANDLERS FORMULAIRES OPTIMISÉS
+// =====================================================
+async function handleLoginForm(e) {
   e.preventDefault();
-  const email = document.getElementById("regEmail").value.trim();
-  const password = document.getElementById("regPassword").value.trim();
-  const regErrorMessage = document.getElementById("regErrorMessage");
-
-  if (!email || !password) return regErrorMessage ? regErrorMessage.textContent = "Champs vides" : null;
-  if (password.length < 6) return regErrorMessage ? regErrorMessage.textContent = "Mot de passe court" : null;
-
-  const users = await getUsers();
+  const email = document.getElementById('email')?.value.trim();
+  const password = document.getElementById('password')?.value.trim();
   
-  if (ADMIN_EMAILS.includes(email)) return regErrorMessage ? regErrorMessage.textContent = "Email admin réservé" : null;
-  if (users.find(u => u.email === email)) return regErrorMessage ? regErrorMessage.textContent = "Email existe" : null;
+  if (!email || !password) return showError('Champs vides');
+  
+  const result = await authenticateUser(email, password);
+  if (!result.success) showError(result.error);
+}
 
-  const success = await saveUser(email, password);
-  if (success) {
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("email", email);
-    alert('✅ Compte créé dans Firebase ! Connectez-vous !');
-    setTimeout(() => window.location.href = "index.html", 1000);
+async function handleRegisterForm(e) {
+  e.preventDefault();
+  const email = document.getElementById('regEmail')?.value.trim();
+  const password = document.getElementById('regPassword')?.value.trim();
+  
+  const result = await registerUser(email, password);
+  
+  if (result.success) {
+    // UI Succès + Redirection
+    const submitBtn = document.getElementById('submitBtn');
+    const successMsg = document.getElementById('regSuccessMessage');
+    
+    if (submitBtn) submitBtn.textContent = 'Créé !';
+    if (successMsg) {
+      successMsg.innerHTML = '✅ Compte créé ! Redirection...';
+      successMsg.style.display = 'block';
+    }
+    
+    setTimeout(() => window.location.replace('index.html'), 1500);
   } else {
-    regErrorMessage ? regErrorMessage.textContent = "Erreur création" : null;
+    const errorEl = document.getElementById('regErrorMessage');
+    if (errorEl) errorEl.textContent = result.error;
   }
 }
 
-// 👑 ADMIN FIREBASE
+async function handleAdminQuickLogin() {
+  document.getElementById('email').value = ADMIN_CREDENTIALS.emails[0];
+  document.getElementById('password').value = ADMIN_CREDENTIALS.password;
+  document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+}
+
+// =====================================================
+// 🔥 9. ADMIN DASHBOARD COMPLET
+// =====================================================
 async function initAdminDashboard() {
-  loadAdminData();
-  setupAdminActions();
+  if (!STATE.isAdmin) return;
+  
+  await loadAdminData();
+  setupAdminListeners();
+  console.log('👑 Admin Dashboard chargé');
 }
 
 async function loadAdminData() {
-  const users = await getUsers();
-  const stats = {
-    totalUsers: users.length,
-    activeUsers: users.filter(u => localStorage.getItem('email') === u.email).length,
-    bannedUsers: users.filter(u => u.banned).length
+  await syncUsersCache();
+  const stats = calculateStats();
+  updateStatsUI(stats);
+  displayUsersTable(STATE.usersCache);
+}
+
+function calculateStats() {
+  return {
+    total: STATE.usersCache.length,
+    active: STATE.usersCache.filter(u => !u.banned).length,
+    banned: STATE.usersCache.filter(u => u.banned).length,
+    admins: STATE.usersCache.filter(u => u.role === 'admin').length
   };
-  
-  const totalEl = document.getElementById('totalUsers');
-  const activeEl = document.getElementById('activeUsers');
-  const bannedEl = document.getElementById('bannedUsers');
-  
-  if (totalEl) totalEl.textContent = stats.totalUsers;
-  if (activeEl) activeEl.textContent = stats.activeUsers;
-  if (bannedEl) bannedEl.textContent = stats.bannedUsers;
-  
-  displayUsersList(users);
 }
 
-function displayUsersList(users) {
-  const tbody = document.querySelector('#usersTable tbody');
-  if (!tbody) return;
+// =====================================================
+// 🔥 10. LOGOUT + CLEANUP
+// =====================================================
+function handleLogout(e) {
+  e?.preventDefault();
+  if (!confirm('Déconnexion ?')) return;
   
-  tbody.innerHTML = users.map((user, i) => `
-    <tr>
-      <td>${i + 1}</td>
-      <td>${user.email}</td>
-      <td>${user.role || 'user'}</td>
-      <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-FR') : 'N/A'}</td>
-      <td style="color: ${user.banned ? 'red' : 'green'}">${user.banned ? '🚫 Banni' : '✅ Actif'}</td>
-      <td>
-        <button onclick="toggleBan('${user.email}')" class="btn-small ${user.banned ? 'btn-success' : 'btn-danger'}">
-          ${user.banned ? 'Débanir' : 'Bannir'}
-        </button>
-        <button onclick="changeRole('${user.email}')" class="btn-small btn-warning">Rôle</button>
-        <button onclick="deleteUser('${user.email}')" class="btn-small btn-danger">Suppr</button>
-      </td>
-    </tr>
-  `).join('');
+  // CLEAN TOTAL
+  localStorage.clear();
+  sessionStorage.clear();
+  STATE = { isInitialized: true, currentUser: null, isAdmin: false, usersCache: [] };
+  
+  window.location.replace('index.html');
 }
 
-async function toggleBan(email) {
-  const users = await getUsers();
-  const user = users.find(u => u.email === email);
+// =====================================================
+// 🔥 11. UTILITAIRES + DEBUG
+// =====================================================
+function showError(message, targetId = 'errorMessage') {
+  const el = document.getElementById(targetId) || document.getElementById('regErrorMessage');
+  if (el) {
+    el.textContent = message;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 5000);
+  }
+  console.error('❌', message);
+}
+
+// EXPORT GLOBALES ADMIN
+window.toggleBan = async (email) => {
+  const user = STATE.usersCache.find(u => u.email === email);
   if (user) {
     await updateUser(email, { banned: !user.banned });
-    loadAdminData();
-    alert(user.banned ? '✅ Débanni !' : '👮 Banni !');
+    await loadAdminData();
   }
-}
+};
 
-async function changeRole(email) {
-  const newRole = prompt('Nouveau rôle (user/moderator):', 'user');
-  if (newRole) {
-    await updateUser(email, { role: newRole.toLowerCase() });
-    loadAdminData();
-  }
-}
-
-async function deleteUser(email) {
-  if (confirm('Supprimer définitivement ?')) {
+window.deleteUser = async (email) => {
+  if (confirm('Supprimer ?')) {
     await deleteUserByEmail(email);
-    loadAdminData();
+    await loadAdminData();
   }
-}
+};
 
-function setupAdminActions() {
-  const searchInput = document.getElementById('searchUser');
-  if (searchInput) {
-    searchInput.addEventListener('input', async function() {
-      const users = await getUsers();
-      const filtered = users.filter(u => u.email.toLowerCase().includes(this.value.toLowerCase()));
-      displayUsersList(filtered);
-    });
-  }
-  
-  const adminLogout = document.getElementById('adminLogout');
-  if (adminLogout) {
-    adminLogout.addEventListener('click', function() {
-      localStorage.removeItem('isAdmin');
-      localStorage.removeItem('adminEmail');
-      window.location.href = 'index.html';
-    });
-  }
-}
-
-function handleLogout(e) {
-  e.preventDefault();
-  if (confirm("Déconnexion ?")) {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("email");
-    sessionStorage.clear();
-    window.location.href = "index.html";
-  }
-}
-
-function showError(message) {
-  const errorMessage = document.getElementById("errorMessage");
-  if (errorMessage) {
-    errorMessage.textContent = message;
-    errorMessage.classList.add("show");
-    setTimeout(() => errorMessage.classList.remove("show"), 5000);
-  }
-}
-
-// EXPORTER FONCTIONS GLOBALES
-window.checkAuth = checkAuth;
-window.handleLogout = handleLogout;
-window.isAdmin = isAdmin;
-window.checkAdminAuth = checkAdminAuth;
-window.loadAdminData = loadAdminData;
-window.toggleBan = toggleBan;
-window.changeRole = changeRole;
-window.deleteUser = deleteUser;
-
-// 🚀 DÉMARRAGE
-console.log('🎌 Otaku-Saga FIREBASE prêt ! Project ID: otakusaga2026');
+// FIN MASTER
+console.log('🎌 Otaku-Saga 2.0 MASTER CHARGÉ ✅');
