@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	 <link rel="icon" type="image/png" href="otaku.png">
+    <link rel="icon" type="image/png" href="otaku.png">
     <link rel="apple-touch-icon" href="otaku.png">
-	 <meta property="og:image" content="otaku.png">
+    <meta property="og:image" content="otaku.png">
     <title>Otaku Saga - Connexion</title>
     <link rel="stylesheet" href="auth.css" />
-	<!-- 🔥 FIREBASE CDN -->
+    <!-- 🔥 FIREBASE CDN -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   </head>
@@ -47,22 +47,22 @@
           </div>
 
           <button type="submit" class="btn-auth">Se connecter</button>
-
           <div id="errorMessage" class="error-message"></div>
         </form>
 
         <div class="auth-footer">
           <p>
-            Pas encore de compte ? <a href="#" id="registerLink">S'inscrire</a>
+            Pas encore de compte ? 
+            <a href="inscription.html" id="registerLink" style="color: #6c5ce7; text-decoration: none; font-weight: 600;">S'inscrire</a>
           </p>
           
-          <!-- PORTAIL ADMINISTRATEUR SECRET -->
+          <!-- 🚫 PORTAIL ADMINISTRATEUR - CONNEXION OBLIGATOIRE -->
           <div style="margin-top: 25px; padding: 20px; background: rgba(108, 92, 231, 0.05); border-radius: 12px; border: 1px solid rgba(108, 92, 231, 0.2);">
             <p style="text-align: center; color: #6c5ce7; font-weight: 700; font-size: 16px; margin-bottom: 12px;">
               🔐 Portail Administrateur
             </p>
             <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 15px;">
-              Accès réservé - Utilisez vos identifiants admin
+              ⚠️ <strong>CONNEXION REQUIS</strong> - Utilisez admin@otaku.com / OtakuSaga2026!
             </p>
             <button 
               id="adminLoginBtn" 
@@ -70,29 +70,16 @@
               class="btn-auth" 
               style="background: linear-gradient(135deg, #6c5ce7, #a29bfe); width: 100%; font-weight: 600;"
             >
-              👑 Accéder au Panneau Admin
+              👑 Saisir identifiants Admin
             </button>
           </div>
           
-          <div
-            id="alreadyConnected"
-            style="
-              display: none;
-              margin-top: 20px;
-              padding: 15px;
-              background: rgba(108, 92, 231, 0.1);
-              border-radius: 10px;
-              text-align: center;
-            "
-          >
-            <p style="color: #a29bfe; margin-bottom: 10px">
-              Vous êtes déjà connecté
+          <!-- ✅ DÉJÀ CONNECTÉ -->
+          <div id="alreadyConnected" style="display: none; margin-top: 20px; padding: 15px; background: rgba(40, 167, 69, 0.1); border: 1px solid rgba(40, 167, 69, 0.3); border-radius: 10px; text-align: center;">
+            <p style="color: #28a745; margin-bottom: 10px; font-weight: 600;">
+              ✅ Vous êtes déjà connecté(e)
             </p>
-            <a
-              href="accueil.html"
-              style="color: #6c5ce7; text-decoration: none; font-weight: 600"
-              >Aller à l'accueil →</a
-            >
+            <a href="accueil.html" style="color: #28a745; text-decoration: none; font-weight: 600; background: rgba(40, 167, 69, 0.1); padding: 8px 16px; border-radius: 6px; border: 1px solid rgba(40, 167, 69, 0.3);">🚀 Aller à l'accueil</a>
           </div>
         </div>
       </div>
