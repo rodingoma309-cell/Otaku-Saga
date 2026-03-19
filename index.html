@@ -98,6 +98,78 @@
       </div>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+// 🔥 DEBUG + FIX URGENT index.html
+document.addEventListener('DOMContentLoaded', async function() {
+  console.log('🚀 index.html chargé - DEBUG ACTIF');
+  
+  // VÉRIFIER localStorage après inscription
+  const isAuth = localStorage.getItem('isAuthenticated');
+  const email = localStorage.getItem('email');
+  console.log('🔐 DEBUG localStorage:', { isAuth, email });
+  
+  // FORCER alreadyConnected
+  const alreadyConnectedDiv = document.getElementById('alreadyConnected');
+  if (isAuth === 'true' && alreadyConnectedDiv) {
+    console.log('✅ USER CONNECTÉ - Affichage alreadyConnected');
+    alreadyConnectedDiv.style.display = 'block';
+  }
+  
+  // 🔥 FIX loginForm
+  const loginForm = document.getElementById('loginForm');
+  loginForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    console.log('🔐 LOGIN FORM SUBMIT');
+    
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const errorMessage = document.getElementById('errorMessage');
+    
+    if (!email || !password) {
+      errorMessage.textContent = 'Champs vides';
+      return;
+    }
+    
+    // ADMIN SECRET
+    const ADMIN_EMAILS = ['admin@otaku.com', 'admin@saga.com'];
+    const ADMIN_PASSWORD = 'OtakuSaga2026!';
+    
+    if (ADMIN_EMAILS.includes(email) && password === ADMIN_PASSWORD) {
+      localStorage.setItem('isAdmin', 'true');
+      localStorage.setItem('adminEmail', email);
+      window.location.href = 'admin.html';
+      return;
+    }
+    
+    // USER (simulation sans Firebase)
+    if (email.includes('@') && password.length >= 6) {
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('email', email);
+      window.location.href = 'accueil.html';
+    } else {
+      errorMessage.textContent = '❌ Identifiants incorrects';
+    }
+  });
+  
+  // 🔥 FIX adminLoginBtn
+  const adminLoginBtn = document.getElementById('adminLoginBtn');
+  adminLoginBtn.addEventListener('click', function() {
+    console.log('👑 ADMIN BUTTON CLIC');
+    document.getElementById('email').value = 'admin@otaku.com';
+    document.getElementById('password').value = 'OtakuSaga2026!';
+    loginForm.dispatchEvent(new Event('submit'));
+  });
+  
+  // 🔥 FIX registerLink
+  const registerLink = document.getElementById('registerLink');
+  registerLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    window.location.href = 'inscription.html';
+  });
+  
+  console.log('✅ TOUS events attachés !');
+});
+</script>
+	
   </body>
 </html>
