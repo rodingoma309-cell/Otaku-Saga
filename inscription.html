@@ -14,15 +14,18 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   
   <style>
-    /* Loading spinner */
-    .loading {
+    .loading, .success-message {
       display: none;
       text-align: center;
       margin-top: 15px;
-      padding: 10px;
-      background: rgba(108, 92, 231, 0.1);
+      padding: 15px;
       border-radius: 8px;
+      font-weight: 500;
+    }
+    .loading {
+      background: rgba(108, 92, 231, 0.1);
       color: #6c5ce7;
+      border: 1px solid rgba(108, 92, 231, 0.3);
     }
     .spinner {
       border: 2px solid rgba(108, 92, 231, 0.2);
@@ -32,15 +35,32 @@
       height: 20px;
       animation: spin 1s linear infinite;
       margin: 0 auto 10px;
+      display: block;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    .success-message {
+      background: rgba(40, 167, 69, 0.1);
+      color: #28a745;
+      border: 1px solid rgba(40, 167, 69, 0.3);
+    }
     .success-check {
-      color: #00d4aa;
-      font-size: 24px;
+      font-size: 28px;
       margin-bottom: 10px;
+      display: block;
+    }
+    .btn-login-now {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -83,135 +103,107 @@
           S'inscrire
         </button>
 
-        <div id="regErrorMessage" class="error-message"></div>
-        <div id="regSuccessMessage" class="loading">
+        <div id="regErrorMessage" class="error-message" style="display: none;"></div>
+        
+        <!-- Loading -->
+        <div id="loadingMessage" class="loading">
           <div class="spinner"></div>
           <span>Création de votre compte...</span>
+        </div>
+        
+        <!-- Succès avec bouton connexion -->
+        <div id="successMessage" class="success-message">
+          <div class="success-check">✅</div>
+          <p><strong>Compte créé avec succès !</strong></p>
+          <p>Vous pouvez maintenant vous connecter avec vos identifiants.</p>
+          <a href="index.html" class="btn-login-now" id="loginNowBtn">🔐 Me connecter maintenant</a>
         </div>
       </form>
 
       <div class="auth-footer">
-        <p>Déjà un compte ? <a href="index.html" id="loginLink">Se connecter</a></p>
+        <p>Déjà un compte ? <a href="index.html" style="color: #6c5ce7; font-weight: 600;">Se connecter</a></p>
       </div>
     </div>
   </div>
 
+  <!-- 🔥 app.js MASTER (sans auto-submit) -->
+  <script src="app.js"></script>
+  
+  <!-- 🔥 SCRIPT LOCAL pour override comportement -->
   <script>
-    // 🔥 INSCRIPTION COMPLÈTE + REDIRECTION FORCÉE
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 inscription.html chargé');
+      console.log('🎌 inscription.html - MODE SÉCURISÉ');
       
       const form = document.getElementById('registerForm');
       const submitBtn = document.getElementById('submitBtn');
       const errorMsg = document.getElementById('regErrorMessage');
-      const successMsg = document.getElementById('regSuccessMessage');
+      const loadingMsg = document.getElementById('loadingMessage');
+      const successMsg = document.getElementById('successMessage');
+      const loginNowBtn = document.getElementById('loginNowBtn');
       
+      // ✅ SURCHARGE handleRegisterForm
       form.addEventListener('submit', async function(e) {
         e.preventDefault();
-        console.log('📝 FORMULAIRE INSCRIPTION SUBMIT');
+        console.log('📝 INSCRIPTION MANUELLE - SURCHARGE');
         
-        // Récupérer données
         const email = document.getElementById('regEmail').value.trim();
         const password = document.getElementById('regPassword').value.trim();
         
-        // Validation
+        // VALIDATION
         if (!email || !password) {
           showError('Tous les champs sont obligatoires');
           return;
         }
         if (password.length < 6) {
-          showError('Mot de passe trop court (min 6 caractères)');
-          return;
-        }
-        if (!email.includes('@')) {
-          showError('Email invalide');
-          return;
-        }
-        
-        // ADMIN BLOCK
-        const ADMIN_EMAILS = ['admin@otaku.com', 'admin@saga.com'];
-        if (ADMIN_EMAILS.includes(email)) {
-          showError('Cet email est réservé à l\'administration');
+          showError('Mot de passe trop court (minimum 6 caractères)');
           return;
         }
         
         // UI Loading
         submitBtn.disabled = true;
         submitBtn.textContent = 'Création...';
-        successMsg.style.display = 'block';
+        loadingMsg.style.display = 'block';
         errorMsg.style.display = 'none';
-        
-        console.log('💾 Tentative création:', email);
+        successMsg.style.display = 'none';
         
         try {
-          // 🔥 SIMULATION FIREBASE (remplacez par vraie DB)
-          await new Promise(resolve => setTimeout(resolve, 1500)); // Simule attente DB
+          // 🔥 APPELER app.js registerUser
+          const result = await window.registerUser ? window.registerUser(email, password) : 
+                        { success: false, error: 'Système indisponible' };
           
-          // VÉRIFIER DOUBLON LOCAL (simulé)
-          const existingUsers = JSON.parse(localStorage.getItem('otakuUsers') || '[]');
-          if (existingUsers.find(user => user.email === email)) {
-            throw new Error('Cet email existe déjà');
+          if (result.success) {
+            console.log('✅ COMPTE CRÉÉ - MODE SÉCURISÉ');
+            loadingMsg.style.display = 'none';
+            successMsg.style.display = 'block';
+            
+            // PAS de connexion auto - utilisateur clique
+            loginNowBtn.addEventListener('click', function(e) {
+              e.preventDefault();
+              window.location.href = 'index.html';
+            });
+            
+          } else {
+            throw new Error(result.error || 'Erreur création');
           }
           
-          // ✅ SUCCÈS - SAUVEGARDER
-          const newUser = {
-            email,
-            password, // ⚠️ En prod: hacher !
-            role: 'user',
-            createdAt: new Date().toISOString(),
-            banned: false
-          };
-          
-          existingUsers.push(newUser);
-          localStorage.setItem('otakuUsers', JSON.stringify(existingUsers));
-          
-          // ✅ CONNEXION AUTOMATIQUE
-          localStorage.setItem('isAuthenticated', 'true');
-          localStorage.setItem('email', email);
-          
-          console.log('✅ COMPTE CRÉÉ:', email);
-          
-          // UI Succès
-          successMsg.innerHTML = `
-            <div class="success-check">✅</div>
-            <span>Compte créé ! Redirection...</span>
-          `;
-          
-          // 🔄 REDIRECTION FORCÉE (3 étapes)
-          setTimeout(() => {
-            window.location.replace('index.html'); // Méthode 1: Remplace l'historique
-          }, 1500);
-          
         } catch(error) {
-          console.error('❌ ERREUR:', error.message);
-          showError(error.message || 'Erreur création compte');
+          console.error('❌ INSCRIPTION ERROR:', error.message);
+          showError(error.message);
         } finally {
-          // Reset UI
           submitBtn.disabled = false;
-          submitBtn.textContent = "S'inscrire";
-          successMsg.style.display = 'none';
+          submitBtn.textContent = 'S\'inscrire';
+          loadingMsg.style.display = 'none';
         }
       });
       
-      // Login link
-      document.getElementById('loginLink').addEventListener('click', function(e) {
-        e.preventDefault();
-        window.location.href = 'index.html';
-      });
-      
-      console.log('✅ Inscription prête !');
+      console.log('✅ inscription.html PRÊT - Mode sécurisé actif');
     });
     
-    // Fonctions utilitaires
     function showError(message) {
       const errorMsg = document.getElementById('regErrorMessage');
       errorMsg.textContent = message;
       errorMsg.style.display = 'block';
-      
-      // Auto-hide
-      setTimeout(() => {
-        errorMsg.style.display = 'none';
-      }, 5000);
+      setTimeout(() => errorMsg.style.display = 'none', 5000);
     }
   </script>
 </body>
