@@ -1,210 +1,225 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/png" href="otaku.png">
-  <link rel="apple-touch-icon" href="otaku.png">
-  <meta property="og:image" content="otaku.png">
-  <title>Otaku Saga - Inscription</title>
-  <link rel="stylesheet" href="auth.css" />
-  
-  <!-- 🔥 FIREBASE CDN -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  
-  <style>
-    .loading, .success-message {
-      display: none;
-      text-align: center;
-      margin-top: 15px;
-      padding: 15px;
-      border-radius: 8px;
-      font-weight: 500;
-    }
-    .loading {
-      background: rgba(108, 92, 231, 0.1);
-      color: #6c5ce7;
-      border: 1px solid rgba(108, 92, 231, 0.3);
-    }
-    .spinner {
-      border: 2px solid rgba(108, 92, 231, 0.2);
-      border-top: 2px solid #6c5ce7;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 10px;
-      display: block;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .success-message {
-      background: rgba(40, 167, 69, 0.1);
-      color: #28a745;
-      border: 1px solid rgba(40, 167, 69, 0.3);
-    }
-    .success-check {
-      font-size: 28px;
-      margin-bottom: 10px;
-      display: block;
-    }
-    .btn-login-now {
-      background: linear-gradient(135deg, #28a745, #20c997);
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      font-weight: 600;
-      text-decoration: none;
-      display: inline-block;
-      margin-top: 10px;
-    }
-  </style>
-</head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="otaku.png" />
+    <link rel="apple-touch-icon" href="otaku.png" />
+    <meta property="og:image" content="otaku.png" />
+    <title>Otaku Saga - Inscription</title>
+    <link rel="stylesheet" href="auth.css" />
 
-<body>
-  <div class="auth-container">
-    <div class="auth-box">
-      <div class="logo-section">
-        <h1 class="app-title">🎌 Otaku Saga</h1>
-        <p class="app-subtitle">Rejoignez la communauté Otaku !</p>
-      </div>
+    <!-- 🔥 FIREBASE CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-      <form id="registerForm" class="auth-form">
-        <div class="form-group">
-          <label for="regEmail">Email</label>
-          <input
-            type="email"
-            id="regEmail"
-            name="email"
-            required
-            autocomplete="email"
-            placeholder="votre@email.com"
-          />
+    <style>
+      .loading,
+      .success-message {
+        display: none;
+        text-align: center;
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 8px;
+        font-weight: 500;
+      }
+      .loading {
+        background: rgba(108, 92, 231, 0.1);
+        color: #6c5ce7;
+        border: 1px solid rgba(108, 92, 231, 0.3);
+      }
+      .spinner {
+        border: 2px solid rgba(108, 92, 231, 0.2);
+        border-top: 2px solid #6c5ce7;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 10px;
+        display: block;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .success-message {
+        background: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+      }
+      .success-check {
+        font-size: 28px;
+        margin-bottom: 10px;
+        display: block;
+      }
+      .btn-login-now {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="auth-container">
+      <div class="auth-box">
+        <div class="logo-section">
+          <h1 class="app-title">🎌 Otaku Saga</h1>
+          <p class="app-subtitle">Rejoignez la communauté Otaku !</p>
         </div>
 
-        <div class="form-group">
-          <label for="regPassword">Mot de passe</label>
-          <input
-            type="password"
-            id="regPassword"
-            name="password"
-            required
-            autocomplete="new-password"
-            placeholder="••••••••"
-            minlength="6"
-          />
-        </div>
+        <form id="registerForm" class="auth-form" data-custom-handler="true">
+          <div class="form-group">
+            <label for="regEmail">Email</label>
+            <input
+              type="email"
+              id="regEmail"
+              name="email"
+              required
+              autocomplete="email"
+              placeholder="votre@email.com"
+            />
+          </div>
 
-        <button type="submit" class="btn-auth" id="submitBtn">
-          S'inscrire
-        </button>
+          <div class="form-group">
+            <label for="regPassword">Mot de passe</label>
+            <input
+              type="password"
+              id="regPassword"
+              name="password"
+              required
+              autocomplete="new-password"
+              placeholder="••••••••"
+              minlength="6"
+            />
+          </div>
 
-        <div id="regErrorMessage" class="error-message" style="display: none;"></div>
-        
-        <!-- Loading -->
-        <div id="loadingMessage" class="loading">
-          <div class="spinner"></div>
-          <span>Création de votre compte...</span>
-        </div>
-        
-        <!-- Succès avec bouton connexion -->
-        <div id="successMessage" class="success-message">
-          <div class="success-check">✅</div>
-          <p><strong>Compte créé avec succès !</strong></p>
-          <p>Vous pouvez maintenant vous connecter avec vos identifiants.</p>
-          <a href="index.html" class="btn-login-now" id="loginNowBtn">🔐 Me connecter maintenant</a>
-        </div>
-      </form>
+          <button type="submit" class="btn-auth" id="submitBtn">
+            S'inscrire
+          </button>
 
-      <div class="auth-footer">
-        <p>Déjà un compte ? <a href="index.html" style="color: #6c5ce7; font-weight: 600;">Se connecter</a></p>
+          <div
+            id="regErrorMessage"
+            class="error-message"
+            style="display: none"
+          ></div>
+
+          <!-- Loading -->
+          <div id="loadingMessage" class="loading">
+            <div class="spinner"></div>
+            <span>Création de votre compte...</span>
+          </div>
+
+          <!-- Succès avec bouton connexion -->
+          <div id="successMessage" class="success-message">
+            <div class="success-check">✅</div>
+            <p><strong>Compte créé avec succès !</strong></p>
+            <p>Vous pouvez maintenant vous connecter avec vos identifiants.</p>
+            <a href="index.html" class="btn-login-now" id="loginNowBtn"
+              >🔐 Me connecter maintenant</a
+            >
+          </div>
+        </form>
+
+        <div class="auth-footer">
+          <p>
+            Déjà un compte ?
+            <a href="index.html" style="color: #6c5ce7; font-weight: 600"
+              >Se connecter</a
+            >
+          </p>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- 🔥 app.js MASTER (sans auto-submit) -->
-  <script src="app.js"></script>
-  
-  <!-- 🔥 SCRIPT LOCAL pour override comportement -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('🎌 inscription.html - MODE SÉCURISÉ');
-      
-      const form = document.getElementById('registerForm');
-      const submitBtn = document.getElementById('submitBtn');
-      const errorMsg = document.getElementById('regErrorMessage');
-      const loadingMsg = document.getElementById('loadingMessage');
-      const successMsg = document.getElementById('successMessage');
-      const loginNowBtn = document.getElementById('loginNowBtn');
-      
-      // ✅ SURCHARGE handleRegisterForm
-      form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        console.log('📝 INSCRIPTION MANUELLE - SURCHARGE');
-        
-        const email = document.getElementById('regEmail').value.trim();
-        const password = document.getElementById('regPassword').value.trim();
-        
-        // VALIDATION
-        if (!email || !password) {
-          showError('Tous les champs sont obligatoires');
-          return;
-        }
-        if (password.length < 6) {
-          showError('Mot de passe trop court (minimum 6 caractères)');
-          return;
-        }
-        
-        // UI Loading
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Création...';
-        loadingMsg.style.display = 'block';
-        errorMsg.style.display = 'none';
-        successMsg.style.display = 'none';
-        
-        try {
-          // 🔥 APPELER app.js registerUser
-          const result = await window.registerUser ? window.registerUser(email, password) : 
-                        { success: false, error: 'Système indisponible' };
-          
-          if (result.success) {
-            console.log('✅ COMPTE CRÉÉ - MODE SÉCURISÉ');
-            loadingMsg.style.display = 'none';
-            successMsg.style.display = 'block';
-            
-            // PAS de connexion auto - utilisateur clique
-            loginNowBtn.addEventListener('click', function(e) {
-              e.preventDefault();
-              window.location.href = 'index.html';
-            });
-            
-          } else {
-            throw new Error(result.error || 'Erreur création');
+    <!-- 🔥 app.js MASTER (sans auto-submit) -->
+    <script src="app.js"></script>
+
+    <!-- 🔥 SCRIPT LOCAL pour override comportement -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("🎌 inscription.html - MODE SÉCURISÉ");
+
+        const form = document.getElementById("registerForm");
+        const submitBtn = document.getElementById("submitBtn");
+        const errorMsg = document.getElementById("regErrorMessage");
+        const loadingMsg = document.getElementById("loadingMessage");
+        const successMsg = document.getElementById("successMessage");
+        const loginNowBtn = document.getElementById("loginNowBtn");
+
+        // ✅ SURCHARGE handleRegisterForm
+        form.addEventListener("submit", async function (e) {
+          e.preventDefault();
+          console.log("📝 INSCRIPTION MANUELLE - SURCHARGE");
+
+          const email = document.getElementById("regEmail").value.trim();
+          const password = document.getElementById("regPassword").value.trim();
+
+          // VALIDATION
+          if (!email || !password) {
+            showError("Tous les champs sont obligatoires");
+            return;
           }
-          
-        } catch(error) {
-          console.error('❌ INSCRIPTION ERROR:', error.message);
-          showError(error.message);
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'S\'inscrire';
-          loadingMsg.style.display = 'none';
-        }
+          if (password.length < 6) {
+            showError("Mot de passe trop court (minimum 6 caractères)");
+            return;
+          }
+
+          // UI Loading
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Création...";
+          loadingMsg.style.display = "block";
+          errorMsg.style.display = "none";
+          successMsg.style.display = "none";
+
+          try {
+            // 🔥 APPELER app.js registerUser
+            const result = (await window.registerUser)
+              ? window.registerUser(email, password)
+              : { success: false, error: "Système indisponible" };
+
+            if (result.success) {
+              console.log("✅ COMPTE CRÉÉ - MODE SÉCURISÉ");
+              loadingMsg.style.display = "none";
+              successMsg.style.display = "block";
+
+              // PAS de connexion auto - utilisateur clique
+              loginNowBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                window.location.href = "index.html";
+              });
+            } else {
+              throw new Error(result.error || "Erreur création");
+            }
+          } catch (error) {
+            console.error("❌ INSCRIPTION ERROR:", error.message);
+            showError(error.message);
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "S'inscrire";
+            loadingMsg.style.display = "none";
+          }
+        });
+
+        console.log("✅ inscription.html PRÊT - Mode sécurisé actif");
       });
-      
-      console.log('✅ inscription.html PRÊT - Mode sécurisé actif');
-    });
-    
-    function showError(message) {
-      const errorMsg = document.getElementById('regErrorMessage');
-      errorMsg.textContent = message;
-      errorMsg.style.display = 'block';
-      setTimeout(() => errorMsg.style.display = 'none', 5000);
-    }
-  </script>
-</body>
+
+      function showError(message) {
+        const errorMsg = document.getElementById("regErrorMessage");
+        errorMsg.textContent = message;
+        errorMsg.style.display = "block";
+        setTimeout(() => (errorMsg.style.display = "none"), 5000);
+      }
+    </script>
+  </body>
 </html>
