@@ -259,7 +259,9 @@ function attachUnifiedEvents() {
   if (loginForm) loginForm.addEventListener("submit", handleLoginForm);
 
   const registerForm = document.getElementById("registerForm");
-  if (registerForm) registerForm.addEventListener("submit", handleRegisterForm);
+  if (registerForm && registerForm.dataset.customHandler !== "true") {
+    registerForm.addEventListener("submit", handleRegisterForm);
+  }
 
   const adminBtn = document.getElementById("adminLoginBtn");
   if (adminBtn) adminBtn.addEventListener("click", handleAdminQuickLogin);
@@ -299,7 +301,9 @@ async function handleRegisterForm(e) {
 
   if (result.success) {
     const submitBtn = document.getElementById("submitBtn");
-    const successMsg = document.getElementById("regSuccessMessage");
+    const successMsg =
+      document.getElementById("regSuccessMessage") ||
+      document.getElementById("successMessage");
 
     if (submitBtn) submitBtn.textContent = "Créé !";
     if (successMsg) {
@@ -309,8 +313,7 @@ async function handleRegisterForm(e) {
 
     setTimeout(() => window.location.replace("index.html"), 1500);
   } else {
-    const errorEl = document.getElementById("regErrorMessage");
-    if (errorEl) errorEl.textContent = result.error;
+    showError(result.error, "regErrorMessage");
   }
 }
 
