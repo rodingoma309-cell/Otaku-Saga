@@ -121,9 +121,18 @@ function generateChaptersForSeason(season, manga) {
         const chapterNum = (season - 1) * chaptersPerSeason + chapter;
         chaptersHTML += `
             <div class="chapter-item">
-                <span class="chapter-number">Chapitre ${chapterNum}</span>
-                <span class="chapter-title">${manga.title} - Épisode ${chapterNum}</span>
-                <span class="chapter-status">✓ Disponible</span>
+                <div class="chapter-info">
+                    <span class="chapter-number">Chapitre ${chapterNum}</span>
+                    <span class="chapter-title">${manga.title} - Épisode ${chapterNum}</span>
+                </div>
+                <div class="chapter-actions">
+                    <button class="btn-read-here" onclick="readChapterHere(${manga.id}, ${chapterNum}, '${manga.title}')">
+                        📖 Lire ici
+                    </button>
+                    <button class="btn-read-external" onclick="readChapterExternal('${manga.readLink}', ${chapterNum})">
+                        🔗 Lire en externe
+                    </button>
+                </div>
             </div>
         `;
     }
@@ -139,14 +148,51 @@ function generateDefaultChapters(manga) {
     for (let i = 1; i <= totalChapters; i++) {
         chaptersHTML += `
             <div class="chapter-item">
-                <span class="chapter-number">Chapitre ${i}</span>
-                <span class="chapter-title">${manga.title} - Épisode ${i}</span>
-                <span class="chapter-status">✓ Disponible</span>
+                <div class="chapter-info">
+                    <span class="chapter-number">Chapitre ${i}</span>
+                    <span class="chapter-title">${manga.title} - Épisode ${i}</span>
+                </div>
+                <div class="chapter-actions">
+                    <button class="btn-read-here" onclick="readChapterHere(${manga.id}, ${i}, '${manga.title}')">
+                        📖 Lire ici
+                    </button>
+                    <button class="btn-read-external" onclick="readChapterExternal('${manga.readLink}', ${i})">
+                        🔗 Lire en externe
+                    </button>
+                </div>
             </div>
         `;
     }
     
     return chaptersHTML;
+}
+
+function readChapterHere(mangaId, chapterNum, mangaTitle) {
+    // Afficher le chapitre sur le site
+    const chapterContent = `
+        <div class="chapter-reader">
+            <h2>${mangaTitle} - Chapitre ${chapterNum}</h2>
+            <div class="chapter-body">
+                <p>Contenu du chapitre ${chapterNum} en cours de chargement...</p>
+                <p>Titre: ${mangaTitle}</p>
+                <p>Numéro du chapitre: ${chapterNum}</p>
+                <p style="margin-top: 20px; color: #999;">Le contenu complet du manga sera affiché ici.</p>
+            </div>
+            <button class="btn-back-chapters" onclick="location.reload()">← Retour aux chapitres</button>
+        </div>
+    `;
+    document.querySelector('.reading-content').innerHTML = chapterContent;
+    window.scrollTo(0, 0);
+}
+
+function readChapterExternal(readLink, chapterNum) {
+    // Rediriger vers le site externe
+    if (readLink && readLink !== '#') {
+        const externalLink = readLink + (readLink.includes('?') ? '&chapter=' : '?chapter=') + chapterNum;
+        window.open(externalLink, '_blank');
+    } else {
+        alert('Lien externe non disponible pour ce manga');
+    }
 }
 
 function displayError(message) {
