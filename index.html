@@ -3,14 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="otaku.png" />
-    <link rel="apple-touch-icon" href="otaku.png" />
-    <meta property="og:image" content="otaku.png" />
+    <link rel="icon" type="image/png" href="nour.jpg" />
+    <link rel="apple-touch-icon" href="nour.jpg" />
+    <meta property="og:image" content="nour.jpg" />
     <title>Otaku Saga - Connexion</title>
     <link rel="stylesheet" href="auth.css" />
-    <!-- 🔥 FIREBASE CDN -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   </head>
 
   <body>
@@ -47,48 +44,32 @@
           </div>
 
           <button type="submit" class="btn-auth">Se connecter</button>
+
           <div id="errorMessage" class="error-message"></div>
         </form>
 
         <div class="auth-footer">
           <p>
-            Pas encore de compte ?
-            <a
-              href="inscription.html"
-              id="registerLink"
-              style="color: #6c5ce7; text-decoration: none; font-weight: 600"
-              >S'inscrire</a
-            >
+            Pas encore de compte ? <a href="#" id="registerLink">S'inscrire</a>
           </p>
-
-          <!-- ✅ DÉJÀ CONNECTÉ -->
           <div
             id="alreadyConnected"
             style="
               display: none;
               margin-top: 20px;
               padding: 15px;
-              background: rgba(40, 167, 69, 0.1);
-              border: 1px solid rgba(40, 167, 69, 0.3);
+              background: rgba(108, 92, 231, 0.1);
               border-radius: 10px;
               text-align: center;
             "
           >
-            <p style="color: #28a745; margin-bottom: 10px; font-weight: 600">
-              ✅ Vous êtes déjà connecté(e)
+            <p style="color: #a29bfe; margin-bottom: 10px">
+              Vous êtes déjà connecté
             </p>
             <a
               href="accueil.html"
-              style="
-                color: #28a745;
-                text-decoration: none;
-                font-weight: 600;
-                background: rgba(40, 167, 69, 0.1);
-                padding: 8px 16px;
-                border-radius: 6px;
-                border: 1px solid rgba(40, 167, 69, 0.3);
-              "
-              >🚀 Aller à l'accueil</a
+              style="color: #6c5ce7; text-decoration: none; font-weight: 600"
+              >Aller à l'accueil →</a
             >
           </div>
         </div>
