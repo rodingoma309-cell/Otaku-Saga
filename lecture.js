@@ -1,35 +1,35 @@
 // Page de lecture complète de l'histoire du manga
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Récupérer l'ID du manga depuis l'URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const mangaId = parseInt(urlParams.get('id'));
-    
-    if (!mangaId || !window.allMangas) {
-        displayError('Manga non trouvé');
-        return;
-    }
-    
-    // Trouver le manga dans la base de données
-    const manga = window.allMangas.find(m => m.id === mangaId);
-    
-    if (!manga) {
-        displayError('Manga non trouvé');
-        return;
-    }
-    
-    // Afficher l'histoire complète
-    displayFullStory(manga);
+document.addEventListener("DOMContentLoaded", function () {
+  // Récupérer l'ID du manga depuis l'URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const mangaId = parseInt(urlParams.get("id"));
+
+  if (!mangaId || !window.allMangas) {
+    displayError("Manga non trouvé");
+    return;
+  }
+
+  // Trouver le manga dans la base de données
+  const manga = window.allMangas.find((m) => m.id === mangaId);
+
+  if (!manga) {
+    displayError("Manga non trouvé");
+    return;
+  }
+
+  // Afficher l'histoire complète
+  displayFullStory(manga);
 });
 
 function displayFullStory(manga) {
-    const container = document.getElementById('readingContainer');
-    
-    // Utiliser fullStory si disponible, sinon description
-    const fullStory = manga.fullStory || manga.description;
-    
-    // Générer le contenu HTML
-    container.innerHTML = `
+  const container = document.getElementById("readingContainer");
+
+  // Utiliser fullStory si disponible, sinon description
+  const fullStory = manga.fullStory || manga.description;
+
+  // Générer le contenu HTML
+  container.innerHTML = `
         <div class="reading-header">
             <a href="actus.html" class="back-btn">← Retour aux mangas</a>
             <div class="manga-header-info">
@@ -67,7 +67,7 @@ function displayFullStory(manga) {
                 <section class="story-section">
                     <h2 class="section-title">🔗 Liens de Lecture</h2>
                     <div class="reading-links">
-                        <a href="${manga.readLink || '#'}" target="_blank" class="external-read-btn">
+                        <a href="${manga.readLink || "#"}" target="_blank" class="external-read-btn">
                             📖 Lire le manga en ligne (lien externe) →
                         </a>
                     </div>
@@ -78,21 +78,21 @@ function displayFullStory(manga) {
 }
 
 function formatStoryText(text) {
-    // Formater le texte avec des paragraphes
-    const paragraphs = text.split('\n').filter(p => p.trim());
-    return paragraphs.map(p => `<p>${p.trim()}</p>`).join('');
+  // Formater le texte avec des paragraphes
+  const paragraphs = text.split("\n").filter((p) => p.trim());
+  return paragraphs.map((p) => `<p>${p.trim()}</p>`).join("");
 }
 
 function generateChaptersList(manga) {
-    // Générer une liste de chapitres basée sur les saisons
-    const seasons = manga.seasons || 'Saison 1';
-    const seasonMatch = seasons.match(/(\d+)/);
-    const numSeasons = seasonMatch ? parseInt(seasonMatch[1]) : 1;
-    
-    let chaptersHTML = '';
-    
-    for (let season = 1; season <= numSeasons; season++) {
-        chaptersHTML += `
+  // Générer une liste de chapitres basée sur les saisons
+  const seasons = manga.seasons || "Saison 1";
+  const seasonMatch = seasons.match(/(\d+)/);
+  const numSeasons = seasonMatch ? parseInt(seasonMatch[1]) : 1;
+
+  let chaptersHTML = "";
+
+  for (let season = 1; season <= numSeasons; season++) {
+    chaptersHTML += `
             <div class="season-block">
                 <h3 class="season-title">Saison ${season}</h3>
                 <div class="chapters-list">
@@ -100,26 +100,29 @@ function generateChaptersList(manga) {
                 </div>
             </div>
         `;
-    }
-    
-    return chaptersHTML || `
+  }
+
+  return (
+    chaptersHTML ||
+    `
         <div class="season-block">
             <h3 class="season-title">${manga.seasons}</h3>
             <div class="chapters-list">
                 ${generateDefaultChapters(manga)}
             </div>
         </div>
-    `;
+    `
+  );
 }
 
 function generateChaptersForSeason(season, manga) {
-    // Générer environ 12-24 chapitres par saison
-    const chaptersPerSeason = 20;
-    let chaptersHTML = '';
-    
-    for (let chapter = 1; chapter <= chaptersPerSeason; chapter++) {
-        const chapterNum = (season - 1) * chaptersPerSeason + chapter;
-        chaptersHTML += `
+  // Générer environ 12-24 chapitres par saison
+  const chaptersPerSeason = 20;
+  let chaptersHTML = "";
+
+  for (let chapter = 1; chapter <= chaptersPerSeason; chapter++) {
+    const chapterNum = (season - 1) * chaptersPerSeason + chapter;
+    chaptersHTML += `
             <div class="chapter-item">
                 <div class="chapter-info">
                     <span class="chapter-number">Chapitre ${chapterNum}</span>
@@ -135,18 +138,18 @@ function generateChaptersForSeason(season, manga) {
                 </div>
             </div>
         `;
-    }
-    
-    return chaptersHTML;
+  }
+
+  return chaptersHTML;
 }
 
 function generateDefaultChapters(manga) {
-    // Générer des chapitres par défaut
-    let chaptersHTML = '';
-    const totalChapters = 50; // Nombre approximatif de chapitres
-    
-    for (let i = 1; i <= totalChapters; i++) {
-        chaptersHTML += `
+  // Générer des chapitres par défaut
+  let chaptersHTML = "";
+  const totalChapters = 50; // Nombre approximatif de chapitres
+
+  for (let i = 1; i <= totalChapters; i++) {
+    chaptersHTML += `
             <div class="chapter-item">
                 <div class="chapter-info">
                     <span class="chapter-number">Chapitre ${i}</span>
@@ -162,14 +165,14 @@ function generateDefaultChapters(manga) {
                 </div>
             </div>
         `;
-    }
-    
-    return chaptersHTML;
+  }
+
+  return chaptersHTML;
 }
 
 function readChapterHere(mangaId, chapterNum, mangaTitle) {
-    // Afficher le chapitre sur le site
-    const chapterContent = `
+  // Afficher le chapitre sur le site
+  const chapterContent = `
         <div class="chapter-reader">
             <h2>${mangaTitle} - Chapitre ${chapterNum}</h2>
             <div class="chapter-body">
@@ -181,23 +184,26 @@ function readChapterHere(mangaId, chapterNum, mangaTitle) {
             <button class="btn-back-chapters" onclick="location.reload()">← Retour aux chapitres</button>
         </div>
     `;
-    document.querySelector('.reading-content').innerHTML = chapterContent;
-    window.scrollTo(0, 0);
+  document.querySelector(".reading-content").innerHTML = chapterContent;
+  window.scrollTo(0, 0);
 }
 
 function readChapterExternal(readLink, chapterNum) {
-    // Rediriger vers le site externe
-    if (readLink && readLink !== '#') {
-        const externalLink = readLink + (readLink.includes('?') ? '&chapter=' : '?chapter=') + chapterNum;
-        window.open(externalLink, '_blank');
-    } else {
-        alert('Lien externe non disponible pour ce manga');
-    }
+  // Rediriger vers le site externe
+  if (readLink && readLink !== "#") {
+    const externalLink =
+      readLink +
+      (readLink.includes("?") ? "&chapter=" : "?chapter=") +
+      chapterNum;
+    window.open(externalLink, "_blank");
+  } else {
+    alert("Lien externe non disponible pour ce manga");
+  }
 }
 
 function displayError(message) {
-    const container = document.getElementById('readingContainer');
-    container.innerHTML = `
+  const container = document.getElementById("readingContainer");
+  container.innerHTML = `
         <div class="error-container">
             <h2>❌ ${message}</h2>
             <p>Le manga demandé n'a pas pu être trouvé.</p>
@@ -207,7 +213,7 @@ function displayError(message) {
 }
 
 // Styles additionnels pour la page de lecture
-const style = document.createElement('style');
+const style = document.createElement("style");
 style.textContent = `
     .reading-container {
         max-width: 1200px;
@@ -436,4 +442,3 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
-
