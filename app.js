@@ -15,7 +15,7 @@ function checkAuth() {
   ];
 
   if (protectedPages.includes(currentPage) && !isAuthenticated) {
-    window.location.href = "auth.html";
+    window.location.href = "index.html";
     return false;
   }
 
@@ -31,9 +31,9 @@ document.addEventListener("DOMContentLoaded", function () {
     window.location.href.split("/").pop();
 
   if (
-    currentPage === "auth.html" ||
+    currentPage === "index.html" ||
     currentPage === "" ||
-    currentPage.includes("auth.html")
+    currentPage.includes("index.html")
   ) {
     const isAuthenticated = localStorage.getItem("isAuthenticated");
     if (isAuthenticated) {
@@ -167,7 +167,7 @@ function handleLogout(e) {
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("email");
     localStorage.removeItem("otakuSagaUsers"); // Nettoyage
-    window.location.href = "auth.html";
+    window.location.href = "index.html";
   }
 }
 
